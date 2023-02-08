@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block wrapper %}
+
+    <header id="header">
+        <div class="logo">
+            <span class="icon fa-gem"></span>
+        </div>
+        <div class="content">
+            <div class="inner">
+                <h3>Modify and confirm the recognitions result</h3>
+                <form method="post" action="{{ url_for('result') }}" enctype="multipart/form-data">
+                    <textarea rows="15" name="stu_ans">{{ stu_ans }}</textarea>
+                    <input type="submit" value="Confirm" class="button-new" style="margin-top:15px;"/>
+                    <br>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <main id="main">
+
+    </main>
+
+    <footer id="footer">
+
+    </footer>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block wrapper %}
+    <!-- Header -->
+    <header id="header">
+        <div class="logo">
+            <span class="icon fa-gem"></span>
+        </div>
+        <div class="content">
+            <div class="inner">
+                <h1>Grading System</h1>
+                <p>A scoring system based on OCR technology</p>
+            </div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#intro">Intro</a></li>
+                <li><a href="#Upload">Upload</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+<!-- Main -->
+    <div id="main">
+
+        <!-- Intro -->
+            <article id="intro">
+                <h2 class="major">Intro</h2>
+                <p>It has now become popular in mainland China to have students answer questions on a special type of answer card, which generally uses positioning points to locate answers and scan them into the computer by dividing them according to the pre-set position. This allows the teacher to mark the paper from anywhere, anytime, via computer or cell phone. Using such methods can effectively reduce the teacher's marking burden and speed up the marking efficiency. In addition, machine marking can be more objective in judging the scores of subjective questions, and can also avoid the original test papers being tampered with, and the confidentiality of the test papers is stronger, which can better protect the interests of the candidates.</p>
+                <p>This project employs deep learning technology to construct an intelligent scoring system in order to cut costs and increase usability. Students are permitted to answer examination questions on any white paper. The system analyzes the student's responses and assigns a grade based on their responses. There are three components to the main program: handwriting detection, recognition, and response comparison.</p>
+            </article>
+
+        <!-- Upload -->
+            <article id="Upload">
+                <h2 class="major">Upload</h2>
+                <div>
+                    <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+                    <input type="file" size="30" name="photo"/>
+                    <br><br><br>
+                    <input type="submit" value="Upload" class="button-new" style="margin-top:15px;"/>
+                    </form>
+                </div>
+            </article>
+
+        <!-- About -->
+            <article id="about">
+                <h2 class="major">About</h2>
+                <span class="image main"><img src="{{ url_for('static', filename='images/About/flowchart.png') }}" alt="flowchart" /></span>
+                <p>This project plans to use deep learning technology to train neural networks to perform Chinese character detection and recognition tasks. The flowchart shows the workflow of this model.</p>
+                <p>First the camera takes a picture of the test taker's answer and transfers it to the detector. detector detects and locates the text information in the picture and splits the picture into text fragment which subsequently will be recognized by the recognizer. After the recognizer recognizes the candidate's handwriting font, the scoring system finds the answer corresponding to this question and compares it. Finally, a reference score will be given based on the result of the comparison.</p>
+            </article>
+
+        <!-- Contact -->
+            <article id="contact">
+                <h2 class="major">Contact Me</h2>
+                <p>If you want to contact me😇, please send email to:</p>
+                  <p><img height="16px" src="{{ url_for('static', filename='images/Contact//gmail_ico.png') }}"> <a href="https://mail.google.com/">Gmail</a>: xiangxuan64@gmail.com</p>
+                  <p><img height="16px" src="{{ url_for('static', filename='images/Contact//foxmail_ico.png') }}"> <a href="https://www.foxmail.com/">Foxmail</a>: EdenXiang@foxmail.com</p>
+                <ul class="icons">
+                    <li><a href="https://twitter.com/xiang_eden" class="icon brands fa-twitter"><span class="label">Twitter</span></a></li>
+                    <li><a href="https://www.facebook.com/eden.xiang.50" class="icon brands fa-facebook-f"><span class="label">Facebook</span></a></li>
+                    <li><a href="https://www.instagram.com/eden.xiang/" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
+                    <li><a href="https://github.com/RottenTangerine" class="icon brands fa-github"><span class="label">GitHub</span></a></li>
+                </ul>
+            </article>
+
+    </div>
+
+    <!-- Footer -->
+    <footer id="footer">
+        <p class="copyright">&copy; Untitled. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+    </footer>
+
+{% endblock %}
