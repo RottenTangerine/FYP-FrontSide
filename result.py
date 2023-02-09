@@ -11,29 +11,3 @@ def calculate(text, answer):
     total = len(detail)
 
     return detail, correct, total
-
-
-
-if __name__ == '__main__':
-    _answer = """a
-c
-b
-b
-d
-468000
-万里长城
-Machine Learning
-20cm"""
-
-    _text = """b
-c
-a
-b
-d
-468000
-岳阳楼
-Machine Learning
-20m"""
-
-    _detail, _correct, _total = calculate(_text, _answer)
-    print(_detail, _correct, _total)

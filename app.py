@@ -1,19 +1,20 @@
 import os
 import re
+from icecream import ic
 import uuid
 
 from flask import Flask, render_template, redirect, url_for
 from flask import request, send_from_directory
 
 from upload import *
-from process import *
+from process import process_img
 from result import *
 
 app = Flask(__name__)
 
 # config
 # save location
-app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'Uploads')
+app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
 # file size constraint
 app.config['MAX_CfONTENT_LENGTH'] = 1024 * 1024 * 8  # not used (future work)
 
@@ -52,16 +53,9 @@ def uploaded(filename):
 # Process Image
 @app.route('/process/<filename>')
 def process(img_url):
+    img_path = os.path.join('uploads', img_url.split('/')[-1])
     # feed into the model
-    stu_ans = """b
-c
-a
-b
-d
-468000
-岳阳楼
-Machine Learning
-20m"""
+    stu_ans = process_img(img_path)
     return render_template('process.html', img_url=img_url, stu_ans=stu_ans)
 
 
@@ -72,15 +66,12 @@ def result():
     correct = 0
     total = 0
     text = ''
-    answer = """a
-c
-b
-b
-d
-468000
-万里长城
-Machine Learning
-20cm"""
+    answer = """商王东迁成都
+晋楚双方城濮大战后晋文公成为中原霸主
+赤壁之战
+郡县制度
+罢黜百家，独尊儒术
+"""
     if request.method == 'POST':
         text = request.form.get("stu_ans")
         detail, correct, total = calculate(text, answer)
