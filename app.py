@@ -45,7 +45,8 @@ def create():
 def detail(test_name):
     # check if uploaded answer
     have_ans = False
-    file_list = os.listdir(f'uploads/{test_name}').remove('ans')
+    file_list = os.listdir(f'uploads/{test_name}')
+    file_list.remove('ans')
     print(file_list)
     if os.listdir(os.path.join(f'uploads/{test_name}', 'ans')):
         have_ans = True
