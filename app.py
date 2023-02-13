@@ -29,7 +29,7 @@ def index():
 @app.route('/tests/')
 def tests():
     file_list = os.listdir(app.config['UPLOAD_FOLDER'])
-    return render_template('tests.html', file_list=file_list)
+    return render_template('Test/tests.html', file_list=file_list)
 
 
 # Create Test
@@ -60,7 +60,7 @@ def detail(test_name):
         if os.listdir(os.path.join(f'uploads/{test_name}', 'ans')):
             have_ans = True
 
-        return render_template('detail.html', file_list=file_list, have_ans=have_ans, test_name=test_name)
+        return render_template('Test/detail.html', file_list=file_list, have_ans=have_ans, test_name=test_name)
     # prevent user to type a not valid url directly instead of creating a test
     except:
         return render_template('error.html')
@@ -78,12 +78,12 @@ def upload_ans(test_name):
         img_path = os.path.join('uploads', test_name, 'ans')
         # feed into the model
         answer = process_img(img_path)
-        return render_template('process.html', test_name=test_name, answer=answer)
+        return render_template('Answer/process.html', test_name=test_name, answer=answer)
 
     if request.method == 'GET':
         with open(f'uploads/{test_name}/ans/outputs/ans.txt', 'r') as f:
             answer = f.read()
-        return render_template('process.html', test_name=test_name, answer=answer)
+        return render_template('Answer/process.html', test_name=test_name, answer=answer)
 
     if request.method == 'POST':
         extension = None
@@ -106,7 +106,7 @@ def upload_ans(test_name):
 def view_ans(test_name):
     with open(f'uploads/{test_name}/ans/outputs/ans.txt', 'r') as f:
         answer = f.read()
-    return render_template('view.html', test_name=test_name, answer=answer)
+    return render_template('Answer/view.html', test_name=test_name, answer=answer)
 
 
 # #############################
