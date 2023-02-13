@@ -22,6 +22,7 @@ def process_img(ans_path):
     result_txt = os.path.join(result_dir, f'ans.txt')
 
     with open(result_txt, 'w+') as f:
+        lines = []
         for img in img_list:
             img_path = os.path.join(ans_path, img)
             result, image_framed = single_pic_proc(img_path)
@@ -32,7 +33,7 @@ def process_img(ans_path):
             Image.fromarray(image_framed).save(result_img)
             for key in result:
                 if result[key][1]:
-                    f.write(result[key][1] + '\n')
-        f.seek(0)
-        txt = f.read()[:-1]
+                    lines.append(result[key][1])
+        txt = '\n'.join(lines)
+        f.write(txt)
     return txt

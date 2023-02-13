@@ -10,7 +10,7 @@
             <div class="inner">
                 <h3>Modify and confirm the recognitions result</h3>
                 <form method="post" action="{{ url_for('detail', test_name=test_name) }}" enctype="multipart/form-data">
-                    <textarea rows="15" name="stu_ans">{{ stu_ans }}</textarea>
+                    <textarea rows="15" name="stu_ans">{{ answer }}</textarea>
                     <input type="submit" value="Confirm" class="button-new" style="margin-top:15px;"/>
                     <br>
                 </form>

@@ -8,10 +8,11 @@
 
         {% if have_ans %}
             <p>You have uploaded the ans for this test</p>
-            <h3>check ans</h3>
+            <p><a href="{{ url_for('view_ans', test_name=test_name) }}">view ans </a> </p>
 
 
             <h1>Continue scoring</h1>
+
                 <h3>(button) start score</h3>
 
             <h1>Scored details</h1>
