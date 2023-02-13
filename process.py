@@ -1,4 +1,5 @@
 # use deep learning model te detect the handwriting characters here
+from icecream import ic
 import os
 from ocr import ocr
 import time
@@ -12,17 +13,20 @@ def single_pic_proc(img_path):
     return result, image_framed
 
 
-def process_img(img_path):
-    result_dir = './outputs'
+def process_img(ans_path):
+    result_dir = os.path.join(ans_path, 'outputs')
     os.makedirs(result_dir, exist_ok=True)
 
-    result, image_framed = single_pic_proc(img_path)
-    output_file = os.path.join(result_dir, img_path.split('\\')[-1])
-    txt_file = os.path.join(result_dir, img_path.split('\\')[-1].split('.')[0] + '.txt')
-    print(output_file, txt_file)
-    Image.fromarray(image_framed).save(output_file)
+    img_list = os.listdir(ans_path).remove('outputs')
+    for img in img_list:
+        img_path = os.path.join(ans_path, img)
+        result, image_framed = single_pic_proc(ans_path)
 
-    with open(txt_file, 'w+') as f:
+
+
+    Image.fromarray(image_framed).save(result_dir)
+
+    with open(os.path.join(result_dir, 'ans.txt'), 'w+') as f:
         for key in result:
             if result[key][1]:
                 f.write(result[key][1] + '\n')

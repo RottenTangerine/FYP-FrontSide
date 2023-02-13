@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block wrapper %}
+
+    <header id="">
+
+        <h1>Test: {{ test_name }}</h1>
+
+        {% if have_ans %}
+            <p>You have uploaded the ans for this test</p>
+            <h3>check ans</h3>
+
+
+            <h1>Continue scoring</h1>
+                <h3>(button) start score</h3>
+
+            <h1>Scored details</h1>
+
+            {% if file_list %}
+                {% for student in file_list %}
+                    <h2>{{ student }}</h2>
+                {% endfor %}
+            {% else %}
+                <p>You don't score any test yet..</p>
+            {% endif %}
+
+        {% else %}
+            <p>It seems that you haven't uploaded the answer for this test</p>
+            <div>
+                <form method="post" action="{{ url_for('upload_ans', test_name=test_name) }}" enctype="multipart/form-data">
+                <input type="file" size="30" name="photo"/>
+                <br><br><br>
+                <input type="submit" value="Upload" class="button-new" style="margin-top:15px;"/>
+                </form>
+            </div>
+        {% endif %}
+
+
+
+    </header>
+
+    <main id="main">
+
+    </main>
+
+    <footer id="footer">
+
+    </footer>
+{% endblock %}
