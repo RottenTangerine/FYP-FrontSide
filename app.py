@@ -72,7 +72,7 @@ def detail(test_name):
 
 # Upload Answer Image
 @app.route('/tests/<test_name>/upload_ans/', methods=['GET', 'POST'])
-def upload_ans(test_name):
+def process_ans(test_name):
     # Process Answer Image
     def process(test_name):
         img_path = os.path.join('uploads', test_name, 'ans')
@@ -112,6 +112,53 @@ def view_ans(test_name):
 # #############################
 # ####### Student Part ########
 # ################$############
+
+# process student ans
+@app.route('/tests/<test_name>', methods=['POST'])
+def process_stu_form(test_name):
+    if request.method == 'POST':
+        extension = None
+        clean_files(100)
+        file = request.files.get('stu_ans')
+        stu_name = request.form.get('stu_name')
+
+        if '.' in file.filename:
+            extension = file.filename.rsplit('.', 1)[1]
+
+        if file and is_extension_allowed(extension):
+            file_name = 'answer' + f'.{extension}'
+            os.makedirs(os.path.join('uploads', test_name, 'students', stu_name), exist_ok=True)
+            file.save(os.path.join('uploads', test_name, 'students', stu_name, file_name))
+            process_img(os.path.join('uploads', test_name, 'students', stu_name))
+            return redirect(url_for('check_stu_ans', test_name=test_name, stu_name=stu_name))
+
+        return render_template('error.html')
+
+
+@app.route('/tests/<test_name>/<stu_name>/check_ans', methods=['GET', 'POST'])
+def check_stu_ans(test_name, stu_name):
+    if request.method == 'GET':
+        with open(f'uploads/{test_name}/students/{stu_name}/outputs/ans.txt', 'r') as f:
+            answer = f.read()
+        return render_template('Student/check.html', test_name=test_name, stu_name=stu_name, answer=answer)
+
+    if request.method == 'POST':
+        text = request.form.get("stu_ans")
+        with open(f'uploads/{test_name}/students/{stu_name}/outputs/ans.txt', 'w') as f:
+            f.write('\n'.join(text.split('\r\n')))
+        return redirect(url_for('stu_detail', test_name=test_name, stu_name=stu_name))
+
+
+# view detail
+@app.route('/tests/<test_name>/<stu_name>/', methods=['GET'])
+def stu_detail(test_name, stu_name):
+    # Process Answer Image
+    if request.method == 'GET':
+        with open(f'uploads/{test_name}/ans/outputs/ans.txt', 'r') as f:
+            answer = f.read()
+        return render_template('Student/result.html', test_name=test_name, stu_name=stu_name, answer=answer)
+
+    return render_template('error.html')
 
 
 # #############################

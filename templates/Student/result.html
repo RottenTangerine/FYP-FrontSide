@@ -5,21 +5,21 @@
     <header id="">
         <h1>Result</h1>
         <h2>Summary</h2>
-        <h3>{{ correct }} / {{ total }}</h3>
-        <h2>Details</h2>
-        {% for text, ans, c in detail %}
-            <div>
-                <h3>Q{{ loop.index }}:</h3>
-                <p>student ans: {{ text }}</p>
-                {% if c %}
-                    <p style="background-color: forestgreen">answer: {{ ans }}</p>
-                {% else %}
-                    <p style="background-color: palevioletred">answer: {{ ans }}</p>
-                {% endif %}
-            </div>
-        {% else %}
-            <li>empty</li>
-        {% endfor %}
+{#        <h3>{{ correct }} / {{ total }}</h3>#}
+{#        <h2>Details</h2>#}
+{#        {% for text, ans, c in detail %}#}
+{#            <div>#}
+{#                <h3>Q{{ loop.index }}:</h3>#}
+{#                <p>student ans: {{ text }}</p>#}
+{#                {% if c %}#}
+{#                    <p style="background-color: forestgreen">answer: {{ ans }}</p>#}
+{#                {% else %}#}
+{#                    <p style="background-color: palevioletred">answer: {{ ans }}</p>#}
+{#                {% endif %}#}
+{#            </div>#}
+{#        {% else %}#}
+{#            <li>empty</li>#}
+{#        {% endfor %}#}
 
     </header>
 
