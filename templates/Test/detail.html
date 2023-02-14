@@ -37,7 +37,7 @@
         {% else %}
             <p>It seems that you haven't uploaded the answer for this test</p>
             <div>
-                <form method="post" action="{{ url_for('process_ans', test_name=test_name) }}" enctype="multipart/form-data">
+                <form method="post" action="{{ url_for('process_form', test_name=test_name) }}" enctype="multipart/form-data">
                 <input type="file" size="30" name="photo"/>
                 <br><br><br>
                 <input type="submit" value="Upload" class="button-new" style="margin-top:15px;"/>

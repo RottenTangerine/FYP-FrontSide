@@ -6,10 +6,10 @@
         <h1>Answer</h1>
         <p>{{ answer }}</p>
 
-        <h3><a href="{{ url_for('upload_ans', test_name=test_name) }}"> Modify ans</a></h3>
+        <h3><a href="{{ url_for('check_ans', test_name=test_name) }}"> Modify ans</a></h3>
         <h3>Re-upload ans</h3>
         <div>
-            <form method="post" action="{{ url_for('upload_ans', test_name=test_name) }}" enctype="multipart/form-data">
+            <form method="post" action="{{ url_for('process_form', test_name=test_name) }}" enctype="multipart/form-data">
             <input type="file" size="30" name="photo"/>
             <br><br><br>
             <input type="submit" value="Upload" class="button-new" style="margin-top:15px;"/>
