@@ -4,9 +4,10 @@ from math import *
 import numpy as np
 from detect.ctpn_predict import get_det_boxes
 from recognize.crnn_recognizer import PytorchOcr
+from recognize import config
 
-recognizer_hand = PytorchOcr('ocr/models/handwriting/CRNN-1010.pth')
-recognizer_machine = PytorchOcr('ocr/models/machine/CRNN-1010.pth')
+recognizer_hand = PytorchOcr('ocr/models/handwriting/CRNN-1010.pth', config.alphabet_v2)
+recognizer_machine = PytorchOcr('ocr/models/machine/CRNN-1010.pth', config.alphabet)
 
 
 def sort_box(box):
