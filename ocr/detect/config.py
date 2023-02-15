@@ -1,9 +1,3 @@
-#-*- coding:utf-8 -*-
-#'''
-# Created on 18-12-11 上午10:09
-#
-# @Author: Greg Gao(laygin)
-#'''
 import os
 
 # base_dir = 'path to dataset base dir'
@@ -32,5 +26,5 @@ RPN_TOTAL_NUM = 300
 IMAGE_MEAN = [123.68, 116.779, 103.939]
 
 
-checkpoints_dir = 'ocr/checkpoints'
+checkpoints_dir = 'ocr/models'
 outputs = r'./logs'

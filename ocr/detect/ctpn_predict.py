@@ -1,10 +1,5 @@
-#-*- coding:utf-8 -*-
-#'''
-# Created on 18-12-11 上午10:03
-#
-# @Author: Greg Gao(laygin)
-#'''
 import os
+
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 import cv2
 import numpy as np
@@ -12,30 +7,28 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from detect.ctpn_model import CTPN_Model
-from detect.ctpn_utils import gen_anchor, bbox_transfor_inv, clip_box, filter_bbox,nms, TextProposalConnectorOriented
+from detect.ctpn_utils import gen_anchor, bbox_transfor_inv, clip_box, filter_bbox, nms, TextProposalConnectorOriented
 from detect.ctpn_utils import resize
 from detect import config
 
 prob_thresh = 0.5
 height = 720
-gpu = True
-if not torch.cuda.is_available():
-    gpu = False
-device = torch.device('cuda:0' if gpu else 'cpu')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 weights = os.path.join(config.checkpoints_dir, 'CTPN.pth')
-model = CTPN_Model()
-model.load_state_dict(torch.load(weights, map_location=device)['model_state_dict'])
-model.to(device)
-model.eval()
+
+model_hand = CTPN_Model()
+model_hand.load_state_dict(torch.load(os.path.join(config.checkpoints_dir, 'handwriting', 'CTPN.pth'),
+                                      map_location=device)['model_state_dict'])
+
+model_machine = CTPN_Model()
+model_machine.load_state_dict(torch.load(os.path.join(config.checkpoints_dir, 'machine', 'CTPN.pth'),
+                                         map_location=device)['model_state_dict'])
+
+model_hand.to(device)
+model_machine.to(device)
 
 
-def dis(image):
-    cv2.imshow('image', image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
-def get_det_boxes(image,display = True, expand = True):
+def get_det_boxes(image, handwriting, display=True, expand=True):
     image = resize(image, height=height)
     image_r = image.copy()
     image_c = image.copy()
@@ -45,7 +38,10 @@ def get_det_boxes(image,display = True, expand = True):
 
     with torch.no_grad():
         image = image.to(device)
-        cls, regr = model(image)
+        if handwriting:
+            cls, regr = model_hand(image)
+        else:
+            cls, regr = model_machine(image)
         cls_prob = F.softmax(cls, dim=-1).cpu().numpy()
         regr = regr.cpu().numpy()
         anchor = gen_anchor((int(h / 16), int(w / 16)), 16)
@@ -83,16 +79,15 @@ def get_det_boxes(image,display = True, expand = True):
                 text[idx][4] = max(text[idx][4] - 10, 0)
                 text[idx][6] = min(text[idx][6] + 10, w - 1)
 
-
         # print(text)
         if display:
-            blank = np.zeros(image_c.shape,dtype=np.uint8)
+            blank = np.zeros(image_c.shape, dtype=np.uint8)
             for box in select_anchor:
                 pt1 = (box[0], box[1])
                 pt2 = (box[2], box[3])
                 blank = cv2.rectangle(blank, pt1, pt2, (50, 0, 0), -1)
-            image_c = image_c+blank
-            image_c[image_c>255] = 255
+            image_c = image_c + blank
+            image_c[image_c > 255] = 255
             for i in text:
                 s = str(round(i[-1] * 100, 2)) + '%'
                 i = [int(j) for j in i]
@@ -100,18 +95,18 @@ def get_det_boxes(image,display = True, expand = True):
                 cv2.line(image_c, (i[0], i[1]), (i[4], i[5]), (0, 0, 255), 2)
                 cv2.line(image_c, (i[6], i[7]), (i[2], i[3]), (0, 0, 255), 2)
                 cv2.line(image_c, (i[4], i[5]), (i[6], i[7]), (0, 0, 255), 2)
-                cv2.putText(image_c, s, (i[0]+13, i[1]+13),
+                cv2.putText(image_c, s, (i[0] + 13, i[1] + 13),
                             cv2.FONT_HERSHEY_SIMPLEX,
                             1,
-                            (255,0,0),
+                            (255, 0, 0),
                             2,
                             cv2.LINE_AA)
             # dis(image_c)
         # print(text)
-        return text,image_c,image_r
+        return text, image_c, image_r
+
 
 if __name__ == '__main__':
     img_path = 'images/t1.png'
-    image = cv2.imread(img_path)
-    text,image = get_det_boxes(image)
-    dis(image)
+    img = cv2.imread(img_path)
+    text, img = get_det_boxes(img)

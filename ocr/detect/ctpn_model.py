@@ -1,9 +1,3 @@
-#-*- coding:utf-8 -*-
-#'''
-# Created on 18-12-11 上午10:01
-#
-# @Author: Greg Gao(laygin)
-#'''
 import os
 import torch
 import torch.nn as nn
@@ -89,7 +83,7 @@ class basic_conv(nn.Module):
 class CTPN_Model(nn.Module):
     def __init__(self):
         super().__init__()
-        base_model = models.vgg16(pretrained=False)
+        base_model = models.vgg16()
         layers = list(base_model.features)[:-1]
         self.base_layers = nn.Sequential(*layers)  # block5_conv3 output
         self.rpn = basic_conv(512, 512, 3, 1, 1, bn=False)

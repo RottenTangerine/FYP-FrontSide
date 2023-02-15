@@ -1,20 +1,18 @@
+import PIL.Image
 import cv2
 from math import *
 import numpy as np
 from detect.ctpn_predict import get_det_boxes
 from recognize.crnn_recognizer import PytorchOcr
-recognizer = PytorchOcr()
 
-def dis(image):
-    cv2.imshow('image', image)
-    cv2.waitKey(0)
+recognizer_hand = PytorchOcr('ocr/models/handwriting/CRNN-1010.pth')
+recognizer_machine = PytorchOcr('ocr/models/machine/CRNN-1010.pth')
+
 
 def sort_box(box):
-    """
-    对box进行排序
-    """
     box = sorted(box, key=lambda x: sum([x[1], x[3], x[5], x[7]]))
     return box
+
 
 def dumpRotateImage(img, degree, pt1, pt2, pt3, pt4):
     height, width = img.shape[:2]
@@ -36,10 +34,7 @@ def dumpRotateImage(img, degree, pt1, pt2, pt3, pt4):
     return imgOut
 
 
-def charRec(img, text_recs, adjust=False):
-    """
-    加载OCR模型，进行字符识别
-    """
+def charRec(img, text_recs, handwriting, adjust=False):
     results = {}
     xDim, yDim = img.shape[1], img.shape[0]
 
@@ -57,22 +52,29 @@ def charRec(img, text_recs, adjust=False):
             pt3 = (min(rec[6], xDim - 2), min(yDim - 2, rec[7]))
             pt4 = (rec[4], rec[5])
 
-        degree = degrees(atan2(pt2[1] - pt1[1], pt2[0] - pt1[0]))  # 图像倾斜角度
+        degree = degrees(atan2(pt2[1] - pt1[1], pt2[0] - pt1[0]))  # rotate
 
         partImg = dumpRotateImage(img, degree, pt1, pt2, pt3, pt4)
         # dis(partImg)
-        if partImg.shape[0] < 1 or partImg.shape[1] < 1 or partImg.shape[0] > partImg.shape[1]:  # 过滤异常图片
+        if partImg.shape[0] < 1 or partImg.shape[1] < 1 or partImg.shape[0] > partImg.shape[1]:  # filter abnormal image
             continue
-        text = recognizer.recognize(partImg)
+        # PIL.Image.fromarray(partImg).save(f'{index}.png')  # test
+
+        # recognition
+        if handwriting:
+            text = recognizer_hand.recognize(partImg)
+        else:
+            text = recognizer_machine.recognize(partImg)
+
         if len(text) > 0:
             results[index] = [rec]
-            results[index].append(text)  # 识别文字
+            results[index].append(text)
 
     return results
 
-def ocr(image):
-    # detect
-    text_recs, img_framed, image = get_det_boxes(image)
+
+def ocr(image, handwriting=True):
+    text_recs, img_framed, image = get_det_boxes(image, handwriting)
     text_recs = sort_box(text_recs)
-    result = charRec(image, text_recs)
+    result = charRec(image, text_recs, handwriting)
     return result, img_framed
