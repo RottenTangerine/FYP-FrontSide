@@ -1,29 +1,51 @@
 {% extends "base.html" %}
 
-{% block wrapper %}
-
-    <header id="">
-        <h1>Answer</h1>
-        <p>{{ answer }}</p>
-
-        <h3><a href="{{ url_for('check_ans', test_name=test_name) }}"> Modify ans</a></h3>
-        <h3>Re-upload ans</h3>
-        <div>
-            <form method="post" action="{{ url_for('process_form', test_name=test_name) }}" enctype="multipart/form-data">
-            <input type="file" size="30" name="photo"/>
-            <br><br><br>
-            <input type="submit" value="Upload" class="button-new" style="margin-top:15px;"/>
-            </form>
+{% block content %}
+    <div class="container">
+    <h3 class="text-white mt-5 mb-5">Modify and confirm the recognitions result</h3>
+      <div class="row">
+        <div class="col-xl-6 col-lg-6 col-md-12">
+          <div class="form-group mb-3">
+            <label for="description">Recognize Result</label>
+            <div>{{ answer }}</div>
+          </div>
         </div>
+          <div class="col-xl-6 col-lg-6 col-md-12 mx-auto mb-4">
+            <div class="tm-product-img-dummy mx-auto">
+            </div>
 
+          </div>
+      </div>
 
-    </header>
+        <div class="row">
+            <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
+                <h4><a class="btn btn-primary btn-block text-uppercase tm-mb-big" href="{{ url_for('check_ans', test_name=test_name) }}">Modify Answer </a> </h4>
+                <h3 class="text-white mt-5 mb-5">Re-upload ans</h3>
+              <div class="tm-bg-primary-dark tm-block tm-block-h-auto">
+                <div class="row">
+                  <div class="col-12">
+                    <h2 class="tm-block-title d-inline-block">Upload Answer</h2>
+                  </div>
+                </div>
+                <div class="tm-edit-product-row">
+                    <form method="post" action="{{ url_for('process_form', test_name=test_name) }}" enctype="multipart/form-data">
+                    <input id="ans_file" class="mb-4" type="file" size="30" name="photo" required="required"/>
+                      <div class="form-group tm-mb-big">
+                        <label for="model">Mode</label>
+                        <select
+                          class="custom-select tm-select-accounts"
+                          id="model"
+                        >
+                          <option selected value="1">Handwriting</option>
+                          <option value="2">Machine coded</option>
+                        </select>
+                      </div>
+                    <input type="submit" value="Upload" class="btn btn-primary btn-block text-uppercase" style="margin-top:15px;"/>
+                    </form>
+                </div>
+              </div>
+            </div>
+          </div>
+    </div>
 
-    <main id="main">
-
-    </main>
-
-    <footer id="footer">
-
-    </footer>
 {% endblock %}
