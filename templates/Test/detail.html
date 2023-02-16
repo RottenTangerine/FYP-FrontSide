@@ -1,59 +1,164 @@
 {% extends "base.html" %}
 
-{% block wrapper %}
+{% block content %}
+    <div class="row tm-content-row">
+    <div class="container">
+        <div class="col-12">
+            <h1 class="text-white mt-5 mb-5">Test: {{ test_name }}</h1>
+        </div>
+    </div>
 
-    <header id="">
+    {% if have_ans %}
 
-        <h1>Test: {{ test_name }}</h1>
+        <div class="container tm-mb-big">
 
-        {% if have_ans %}
-            <p>You have uploaded the ans for this test</p>
-            <p><a href="{{ url_for('view_ans', test_name=test_name) }}">view ans </a> </p>
-
-
-            <h1>Continue scoring</h1>
-
-                <div>
-                <form method="post" action="{{ url_for('process_stu_form', test_name=test_name) }}" enctype="multipart/form-data">
-                    <h2>Student Name(ID):</h2>
-                <input type="text" name="stu_name"/><br>
-                    <h2>Student Ans</h2>
-                <input type="file" size="30" name="stu_ans"/>
-                <br><br><br>
-                <input type="submit" value="Upload" class="button-new" style="margin-top:15px;"/>
-                </form>
+          <div class="row">
+            <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
+            <div class="tm-mb-big">
+                <h3 class="text-white mt-5 mb-5">You have uploaded the ans for this test</h3>
+                <h4><a class="btn btn-primary btn-block text-uppercase" href="{{ url_for('view_ans', test_name=test_name) }}">view ans </a> </h4>
             </div>
 
-            <h1>Scored details</h1>
+              <div class="tm-bg-primary-dark tm-block tm-block-h-auto">
+                <div class="row">
+                  <div class="col-12">
+                    <h2 class="tm-block-title d-inline-block">Scoring</h2>
+                  </div>
+                </div>
+                <div class="tm-edit-product-row">
+                    <form method="post" action="{{ url_for('process_stu_form', test_name=test_name) }}" enctype="multipart/form-data" class="row">
+                    <div class="col-xl-6 col-lg-6 col-md-12">
+                      <div class="form-group mb-3">
+                        <label
+                          for="name"
+                          >Student Name(ID):
+                        </label>
+                        <input
+                          id="name"
+                          name="stu_name"
+                          type="text"
+                          class="form-control validate"
+                          required
+                        />
+                      </div>
+                        <br>
+                        <br>
+                        <br>
+                      <div class="form-group mb-3">
+                        <label
+                          for="Status"
+                          >Status</label
+                        >
+                        <select
+                          class="custom-select tm-select-accounts"
+                          id="status"
+                        >
+                          <option selected value="1">OK</option>
+                          <option value="2">Late Submission</option>
+                          <option value="3">Cheat</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-xl-6 col-lg-6 col-md-12 mx-auto mb-4">
+                        <div class="tm-product-img-dummy mx-auto">
+                          <i
+                            class="fas fa-cloud-upload-alt tm-upload-icon"
+                            onclick="document.getElementById('fileInput').click();"
+                          ></i>
+                        </div>
+                        <div class="custom-file mt-3 mb-3">
+                          <input id="fileInput" type="file" name="stu_ans" style="visibility:hidden ;" required="required"/>
+                          <input
+                            type="button"
+                            class="btn btn-primary btn-block mx-auto"
+                            value="PHOTO OF STUDENT ANSWER"
+                            onclick="document.getElementById('fileInput').click();"
+                          />
+                        </div>
+                      </div>
+                    <div class="col-12">
+                      <button type="submit" class="btn btn-primary btn-block text-uppercase" style="margin-top: 25px">upload form</button>
+                    </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            {% if file_list %}
-                {% for student in file_list %}
-                    <h2>{{ student }}</h2>
-                {% endfor %}
-            {% else %}
-                <p>You don't score any test yet..</p>
-            {% endif %}
+        {% if file_list %}
+        <h1 class="text-white mt-5 mb-5">Statistics</h1>
+
+        <h1 class="text-white mt-5 mb-5">Scored details</h1>
+            <div class="col-12 tm-block-col">
+              <div class="tm-bg-primary-dark tm-block tm-block-taller tm-block-scroll">
+                <h2 class="tm-block-title">Orders List</h2>
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th scope="col">STUDENT NAME</th>
+                        <th scope="col">STATUS</th>
+                        <th scope="col">MARK</th>
+                        <th scope="col">ANSWER</th>
+                        <th scope="col">RESULT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in file_list %}
+                        <tr>
+                            <td>{{ student }}</td>
+                            <td>Yes</td>
+                            <td>20</td>
+                            <td><a href="{{ url_for('detail', test_name=test_name) }}">detail</a> </td>
+                            <td>Export</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
         {% else %}
-            <p>It seems that you haven't uploaded the answer for this test</p>
-            <div>
-                <form method="post" action="{{ url_for('process_form', test_name=test_name) }}" enctype="multipart/form-data">
-                <input type="file" size="30" name="photo"/>
-                <br><br><br>
-                <input type="submit" value="Upload" class="button-new" style="margin-top:15px;"/>
-                </form>
+        <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
+            <div class="tm-mb-big">
+                <h3 class="text-white mt-5 mb-5">You haven't uploaded any student answer for this test</h3>
             </div>
+        </div>
         {% endif %}
 
+    {% else %}
+        <div class="container tm-mb-big">
 
+          <div class="row">
+            <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
+                <h3 class="text-white mt-5 mb-5">It seems that you haven't uploaded the answer for this test</h3>
+              <div class="tm-bg-primary-dark tm-block tm-block-h-auto">
+                <div class="row">
+                  <div class="col-12">
+                    <h2 class="tm-block-title d-inline-block">Upload Answer</h2>
+                  </div>
+                </div>
+                <div class="tm-edit-product-row">
+                    <form method="post" action="{{ url_for('process_form', test_name=test_name) }}" enctype="multipart/form-data">
+                    <input id="ans_file" class="mb-4" type="file" size="30" name="photo" required="required"/>
+                      <div class="form-group tm-mb-big">
+                        <label for="model">Mode</label>
+                        <select
+                          class="custom-select tm-select-accounts"
+                          id="model"
+                        >
+                          <option selected value="1">Handwriting</option>
+                          <option value="2">Machine coded</option>
+                        </select>
+                      </div>
+                    <input type="submit" value="Upload" class="btn btn-primary btn-block text-uppercase" style="margin-top:15px;"/>
+                    </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    </header>
-
-    <main id="main">
-
-    </main>
-
-    <footer id="footer">
-
-    </footer>
+    {% endif %}
 {% endblock %}
