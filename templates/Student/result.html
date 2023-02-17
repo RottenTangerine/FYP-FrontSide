@@ -1,33 +1,46 @@
 {% extends "base.html" %}
 
 {% block content %}
-
-    <header id="">
-        <h1>Result</h1>
-        <h2>Summary</h2>
-        <h3>{{ correct }} / {{ total }}</h3>
-        <h2>Details</h2>
-        {% for text, ans, c in detail %}
-            <div>
-                <h3>Q{{ loop.index }}:</h3>
-                <p>student ans: {{ text }}</p>
-                {% if c %}
-                    <p style="background-color: forestgreen">answer: {{ ans }}</p>
-                {% else %}
-                    <p style="background-color: palevioletred">answer: {{ ans }}</p>
-                {% endif %}
+    <div class="container">
+    <div class="row">
+            <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
+            <div class="tm-mb-big">
+                <h2 class="text-white mt-5 mb-5">Summary</h2>
+                <h3 class="text-white mt-5 mb-5">{{ correct }} / {{ total }}</h3>
             </div>
-        {% else %}
-            <li>empty</li>
-        {% endfor %}
+            </div>
+    </div>
+    <div class="col-12 tm-block-col">
+          <div class="tm-bg-primary-dark tm-block tm-block-taller tm-block-scroll">
+            <h2 class="tm-block-title">Detail</h2>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Question No.</th>
+                    <th scope="col">Result</th>
+                    <th scope="col">Student Answer</th>
+                    <th scope="col">Answer</th>
+                    <th scope="col">mark</th>
+                  </tr>
+                </thead>
+                <tbody>
+                    {% for text, ans, c in detail %}
+                    <tr>
+                        <td>Q{{ loop.index }}:</td>
+                        {% if c %}
+                            <td><div class="tm-status-circle moving"></div>correct</td>
+                        {% else %}
+                            <td><div class="tm-status-circle cancelled"></div>wrong</td>
+                        {% endif %}
+                        <td>{{ text }}</td>
+                        <td>{{ ans }}</td>
+                        <td>{{ 1 if c else 0 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+    </div>
 
-    </header>
-
-    <main id="main">
-
-    </main>
-
-    <footer id="footer">
-
-    </footer>
 {% endblock %}

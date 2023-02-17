@@ -41,9 +41,17 @@
                           required
                         />
                       </div>
-                        <br>
-                        <br>
-                        <br>
+                      <div class="form-group mb-3">
+                          <label for="mode">Mode</label>
+                        <select
+                          class="custom-select tm-select-accounts"
+                          id="mode"
+                          name="model"
+                        >
+                          <option selected value="1">Handwriting</option>
+                          <option value="">Machine coded</option>
+                        </select>
+                      </div>
                       <div class="form-group mb-3">
                         <label
                           for="Status"
@@ -110,7 +118,7 @@
                             <td>{{ student }}</td>
                             <td>Yes</td>
                             <td>20</td>
-                            <td><a href="{{ url_for('detail', test_name=test_name) }}">detail</a> </td>
+                            <td><a href="{{ url_for('check_stu_ans', test_name=test_name, stu_name=student) }}">detail</a> </td>
                             <td>Export</td>
                         </tr>
                         {% endfor %}
@@ -143,13 +151,14 @@
                     <form method="post" action="{{ url_for('process_form', test_name=test_name) }}" enctype="multipart/form-data">
                     <input id="ans_file" class="mb-4" type="file" size="30" name="photo" required="required"/>
                       <div class="form-group tm-mb-big">
-                        <label for="model">Mode</label>
+                        <label for="mode">Mode</label>
                         <select
                           class="custom-select tm-select-accounts"
-                          id="model"
+                          id="mode"
+                          name="model"
                         >
                           <option selected value="1">Handwriting</option>
-                          <option value="2">Machine coded</option>
+                          <option value="">Machine coded</option>
                         </select>
                       </div>
                     <input type="submit" value="Upload" class="btn btn-primary btn-block text-uppercase" style="margin-top:15px;"/>

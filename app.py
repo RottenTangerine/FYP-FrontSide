@@ -1,7 +1,5 @@
 import os
-import re
 from icecream import ic
-import uuid
 
 from flask import Flask, render_template, redirect, url_for
 from flask import request
@@ -22,15 +20,12 @@ app.config['MAX_CfONTENT_LENGTH'] = 1024 * 1024 * 8  # not used (future work)
 # Main Page
 @app.route('/')
 def index():
-    return render_template("index.html")
+    file_list = os.listdir(app.config['UPLOAD_FOLDER'])
+    return render_template("index.html", file_list=file_list)
 
-
-# View All Tests
 @app.route('/tests/')
 def tests():
-    file_list = os.listdir(app.config['UPLOAD_FOLDER'])
-    return render_template('Test/tests.html', file_list=file_list)
-
+    return redirect(url_for('index'))
 
 # Create Test
 @app.route('/create/', methods=['POST'])
@@ -51,13 +46,13 @@ def detail(test_name):
     try:
         if request.method == 'POST':
             text = request.form.get("stu_ans")
-            with open(f'uploads/{test_name}/ans/outputs/ans.txt', 'w+') as f:
+            with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/ans/outputs/ans.txt', 'w+') as f:
                 f.write('\n'.join(text.split('\r\n')))
 
         # check if uploaded answer
         have_ans = False
-        file_list = os.listdir(f'uploads/{test_name}/students')
-        if os.listdir(os.path.join(f'uploads/{test_name}', 'ans')):
+        file_list = os.listdir(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/students')
+        if os.listdir(os.path.join(f'{app.config["UPLOAD_FOLDER"]}/{test_name}', 'ans')):
             have_ans = True
 
         return render_template('Test/detail.html', file_list=file_list, have_ans=have_ans, test_name=test_name)
@@ -76,14 +71,15 @@ def process_form(test_name):
         extension = None
         clean_files(100)
         file = request.files.get('photo')
+        mode = request.form.get('model')
 
         if '.' in file.filename:
             extension = file.filename.rsplit('.', 1)[1]
 
         if file and is_extension_allowed(extension):
             file_name = 'image' + f'.{extension}'
-            file.save(os.path.join('uploads', test_name, 'ans', file_name))
-            process_img(os.path.join('uploads', test_name, 'ans'))
+            file.save(os.path.join(app.config["UPLOAD_FOLDER"], test_name, 'ans', file_name))
+            process_img(os.path.join(app.config["UPLOAD_FOLDER"], test_name, 'ans'), handwriting=bool(mode))
             return redirect(url_for('check_ans', test_name=test_name))
 
     return render_template('error.html')
@@ -92,13 +88,13 @@ def process_form(test_name):
 @app.route('/tests/<test_name>/check_ans/', methods=['GET', 'POST'])
 def check_ans(test_name):
     if request.method == 'GET':
-        with open(f'uploads/{test_name}/ans/outputs/ans.txt', 'r') as f:
+        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/ans/outputs/ans.txt', 'r') as f:
             answer = f.read()
         return render_template('Answer/check.html', test_name=test_name, answer=answer)
 
     if request.method == 'POST':
         text = request.form.get("stu_ans")
-        with open(f'uploads/{test_name}/ans/outputs/ans.txt', 'w') as f:
+        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/ans/outputs/ans.txt', 'w') as f:
             f.write('\n'.join(text.split('\r\n')))
         return redirect(url_for('detail', test_name=test_name))
 
@@ -106,7 +102,7 @@ def check_ans(test_name):
 # View ans
 @app.route('/tests/<test_name>/view_ans/', methods=['GET'])
 def view_ans(test_name):
-    with open(f'uploads/{test_name}/ans/outputs/ans.txt', 'r') as f:
+    with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/ans/outputs/ans.txt', 'r') as f:
         answer = f.read()
     return render_template('Answer/view.html', test_name=test_name, answer=answer)
 
@@ -123,15 +119,16 @@ def process_stu_form(test_name):
         clean_files(100)
         file = request.files.get('stu_ans')
         stu_name = request.form.get('stu_name')
+        mode = request.form.get('model')
 
         if '.' in file.filename:
             extension = file.filename.rsplit('.', 1)[1]
 
         if file and is_extension_allowed(extension):
             file_name = 'answer' + f'.{extension}'
-            os.makedirs(os.path.join('uploads', test_name, 'students', stu_name), exist_ok=True)
-            file.save(os.path.join('uploads', test_name, 'students', stu_name, file_name))
-            process_img(os.path.join('uploads', test_name, 'students', stu_name))
+            os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], test_name, 'students', stu_name), exist_ok=True)
+            file.save(os.path.join(app.config["UPLOAD_FOLDER"], test_name, 'students', stu_name, file_name))
+            process_img(os.path.join(app.config["UPLOAD_FOLDER"], test_name, 'students', stu_name), bool(mode))
             return redirect(url_for('check_stu_ans', test_name=test_name, stu_name=stu_name))
 
         return render_template('error.html')
@@ -140,13 +137,13 @@ def process_stu_form(test_name):
 @app.route('/tests/<test_name>/<stu_name>/check_ans', methods=['GET', 'POST'])
 def check_stu_ans(test_name, stu_name):
     if request.method == 'GET':
-        with open(f'uploads/{test_name}/students/{stu_name}/outputs/ans.txt', 'r') as f:
+        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/students/{stu_name}/outputs/ans.txt', 'r') as f:
             answer = f.read()
         return render_template('Student/check.html', test_name=test_name, stu_name=stu_name, answer=answer)
 
     if request.method == 'POST':
         text = request.form.get("stu_ans")
-        with open(f'uploads/{test_name}/students/{stu_name}/outputs/ans.txt', 'w') as f:
+        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/students/{stu_name}/outputs/ans.txt', 'w') as f:
             f.write('\n'.join(text.split('\r\n')))
         return redirect(url_for('stu_detail', test_name=test_name, stu_name=stu_name))
 
@@ -156,9 +153,13 @@ def check_stu_ans(test_name, stu_name):
 def stu_detail(test_name, stu_name):
     # Process Answer Image
     if request.method == 'GET':
-        with open(f'uploads/{test_name}/ans/outputs/ans.txt', 'r') as f:
+        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/ans/outputs/ans.txt', 'r') as f:
             answer = f.read()
-        return render_template('Student/result.html', test_name=test_name, stu_name=stu_name, answer=answer)
+        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/students/{stu_name}/outputs/ans.txt', 'r') as f:
+            stu_answer = f.read()
+        print(answer, stu_answer)
+        details, correct, total = calculate(stu_answer, answer)
+        return render_template('Student/result.html', test_name=test_name, stu_name=stu_name, detail=details, correct=correct, total=total)
 
     return render_template('error.html')
 
