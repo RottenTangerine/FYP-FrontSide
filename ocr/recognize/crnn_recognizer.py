@@ -7,7 +7,7 @@ import torchvision.transforms as transforms
 from torch.autograd import Variable
 import numpy as np
 import random
-from recognize.crnn import CRNN
+from recognize.crnn import CRNN, CRNN_res
 from recognize import config
 
 # copy from mydataset
@@ -97,17 +97,22 @@ class strLabelConverter(object):
 
 # recognize api
 class PytorchOcr():
-    def __init__(self, model_path, alphabet):
+    def __init__(self, net, model_path, alphabet):
         alphabet_unicode = alphabet
         self.alphabet = ''.join([chr(uni) for uni in alphabet_unicode])
         # print(len(self.alphabet))
         self.nclass = len(self.alphabet) + 1
-        self.model = CRNN(config.imgH, 1, self.nclass, 256)
+        if net == 'res':
+            print('set up res model')
+            self.model = CRNN_res(config.imgH, 1, self.nclass, 256)
+        else:
+            print('set up default model')
+            self.model = CRNN(config.imgH, 1, self.nclass, 256)
         self.cuda = False
         if torch.cuda.is_available():
             self.cuda = True
             self.model.cuda()
-            self.model.load_state_dict({k.replace('module.', ''): v for k, v in torch.load(model_path).items()})
+            self.model.load_state_dict(torch.load(model_path))
         else:
             # self.model = nn.DataParallel(self.model)
             self.model.load_state_dict(torch.load(model_path, map_location='cpu'))

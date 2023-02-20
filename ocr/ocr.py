@@ -6,8 +6,8 @@ from detect.ctpn_predict import get_det_boxes
 from recognize.crnn_recognizer import PytorchOcr
 from recognize import config
 
-recognizer_hand = PytorchOcr('ocr/models/handwriting/CRNN-1010.pth', config.alphabet_v2)
-recognizer_machine = PytorchOcr('ocr/models/machine/CRNN-1010.pth', config.alphabet)
+recognizer_hand = PytorchOcr('res', 'ocr/models/handwriting/CRNN-1010.pth', config.alphabet_v2)
+recognizer_machine = PytorchOcr('', 'ocr/models/machine/CRNN-1010.pth', config.alphabet)
 
 
 def sort_box(box):
@@ -79,3 +79,4 @@ def ocr(image, handwriting=True):
     text_recs = sort_box(text_recs)
     result = charRec(image, text_recs, handwriting)
     return result, img_framed
+
