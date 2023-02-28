@@ -4,7 +4,7 @@
     <div class="row tm-content-row">
     <div class="container">
         <div class="col-12">
-            <h1 class="text-white mt-5 mb-5">Test: {{ test_name }}</h1>
+            <h1 class="text-white mt-5 mb-5">Test: PlaceHolder</h1>
         </div>
     </div>
 
@@ -16,7 +16,7 @@
             <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
             <div class="tm-mb-big">
                 <h3 class="text-white mt-5 mb-5">You have uploaded the ans for this test</h3>
-                <h4><a class="btn btn-primary btn-block text-uppercase" href="{{ url_for('view_ans', test_name=test_name) }}">view ans </a> </h4>
+                <h4><a class="btn btn-primary btn-block text-uppercase" href="{{ url_for('view_ans', test_id=test_id) }}">view ans </a> </h4>
             </div>
 
               <div class="tm-bg-primary-dark tm-block tm-block-h-auto">
@@ -26,16 +26,16 @@
                   </div>
                 </div>
                 <div class="tm-edit-product-row">
-                    <form method="post" action="{{ url_for('process_stu_form', test_name=test_name) }}" enctype="multipart/form-data" class="row">
+                    <form method="post" action="{{ url_for('process_stu_form', test_id=test_id) }}" enctype="multipart/form-data" class="row">
                     <div class="col-xl-6 col-lg-6 col-md-12">
                       <div class="form-group mb-3">
                         <label
-                          for="name"
-                          >Student Name(ID):
+                          for="stu_id"
+                          >Student ID:
                         </label>
                         <input
-                          id="name"
-                          name="stu_name"
+                          id="stu_id"
+                          name="stu_id"
                           type="text"
                           class="form-control validate"
                           required
@@ -95,7 +95,7 @@
           </div>
         </div>
 
-        {% if file_list %}
+        {% if papers_mata %}
         <h1 class="text-white mt-5 mb-5">Statistics</h1>
 
         <h1 class="text-white mt-5 mb-5">Scored details</h1>
@@ -105,7 +105,7 @@
                   <table class="table">
                     <thead>
                       <tr>
-                        <th scope="col">STUDENT NAME</th>
+                        <th scope="col">STUDENT ID</th>
                         <th scope="col">STATUS</th>
                         <th scope="col">MARK</th>
                         <th scope="col">ANSWER</th>
@@ -113,12 +113,12 @@
                       </tr>
                     </thead>
                     <tbody>
-                        {% for student in file_list %}
+                        {% for paper_meta in papers_mata %}
                         <tr>
-                            <td>{{ student }}</td>
-                            <td>Yes</td>
+                            <td>{{ paper_meta[0] }}</td>
+                            <td>{{ paper_meta[2] }}</td>
                             <td>20</td>
-                            <td><a href="{{ url_for('check_stu_ans', test_name=test_name, stu_name=student) }}">detail</a> </td>
+                            <td><a href="{{ url_for('check_stu_ans', test_id=paper_meta[2], student_id=paper_meta[1]) }}">Check ans</a> </td>
                             <td>Export</td>
                         </tr>
                         {% endfor %}
@@ -148,8 +148,8 @@
                   </div>
                 </div>
                 <div class="tm-edit-product-row">
-                    <form method="post" action="{{ url_for('process_form', test_name=test_name) }}" enctype="multipart/form-data">
-                    <input id="ans_file" class="mb-4" type="file" size="30" name="photo" required="required"/>
+                    <form method="post" action="{{ url_for('process_form', test_id=test_id) }}" enctype="multipart/form-data">
+                    <input id="ans_file" accept="image/*" class="mb-4" type="file" size="30" name="photo" required="required"/>
                       <div class="form-group tm-mb-big">
                         <label for="mode">Mode</label>
                         <select

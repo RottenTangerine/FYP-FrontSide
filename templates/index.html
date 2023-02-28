@@ -50,12 +50,16 @@
                   </tr>
                 </thead>
                 <tbody>
-                    {% for test_name in file_list %}
+                    {% for _test_meta in tests_meta %}
                     <tr>
-                        <td>{{ test_name }}</td>
-                        <td>Yes</td>
-                        <td>20</td>
-                        <td><a href="{{ url_for('detail', test_name=test_name) }}">detail</a> </td>
+                        <td>{{ _test_meta[1] }}</td>
+                        {% if _test_meta[3] == 1 %}
+                            <td>Yes</td>
+                        {% else %}
+                            <td>No</td>
+                        {% endif %}
+                        <td>{{ _test_meta[2] }}</td>
+                        <td><a href="{{ url_for('detail', test_id=_test_meta[0]) }}">detail</a> </td>
                         <td>Export</td>
                     </tr>
                     {% endfor %}

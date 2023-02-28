@@ -1,18 +1,25 @@
+import json
 import os
+
+import pandas as pd
 from icecream import ic
 
 from flask import Flask, render_template, redirect, url_for
 from flask import request
+import base64
 
 from upload import *
 from process import process_img
 from result import *
 
+from PIL import Image
+import sqlite3
+
 app = Flask(__name__)
 
 # config
 # save location
-app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
+app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'temporary')
 # file size constraint
 app.config['MAX_CfONTENT_LENGTH'] = 1024 * 1024 * 8  # not used (future work)
 
@@ -20,146 +27,261 @@ app.config['MAX_CfONTENT_LENGTH'] = 1024 * 1024 * 8  # not used (future work)
 # Main Page
 @app.route('/')
 def index():
-    file_list = os.listdir(app.config['UPLOAD_FOLDER'])
-    return render_template("index.html", file_list=file_list)
+    # database
+    conn = sqlite3.connect('test.db')
+    cursor = conn.cursor()
+
+    cursor.execute("""SELECT t.id, t.test_name, COUNT(p.id) AS paper_number,
+    CASE WHEN t.ans_txt IS NULL THEN 0 ELSE 1 END AS have_ans
+    FROM alltest t
+    LEFT JOIN allpaper p ON t.id = p.test_id
+    GROUP BY t.id, t.test_name;""")
+    tests_meta = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template("index.html", tests_meta=tests_meta)
+
 
 @app.route('/tests/')
 def tests():
     return redirect(url_for('index'))
+
 
 # Create Test
 @app.route('/create/', methods=['POST'])
 def create():
     if request.method == 'POST':
         name = request.form.get('name')
-        path = os.path.join(app.config['UPLOAD_FOLDER'], name)
-        os.makedirs(path, exist_ok=True)
-        os.makedirs(os.path.join(path, 'ans'), exist_ok=True)
-        os.makedirs(os.path.join(path, 'students'), exist_ok=True)
-        return redirect(url_for('detail', test_name=name))
+
+        # connect database
+        conn = sqlite3.connect('test.db')
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO alltest (test_name, author) VALUES (?, ?);", [name, 'default'])
+        cursor.execute(f"SELECT id FROM alltest ORDER BY id DESC LIMIT 1;")
+        id = cursor.fetchone()[0]
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return redirect(url_for('detail', test_id=id))
     else:
-        return render_template('error.html')
+        return render_template('error.html', error_msg='Create error')
 
 
-@app.route('/tests/<test_name>/', methods=['GET', 'POST'])
-def detail(test_name):
-    try:
-        if request.method == 'POST':
-            text = request.form.get("stu_ans")
-            with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/ans/outputs/ans.txt', 'w+') as f:
-                f.write('\n'.join(text.split('\r\n')))
+@app.route('/tests/<test_id>/', methods=['GET', 'POST'])
+def detail(test_id):
+    # try:
+    conn = sqlite3.connect('test.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT ans_txt FROM alltest WHERE id = ?;", [test_id])
+    answer = cursor.fetchone()[0]
+    cursor.close()
+    conn.close()
 
-        # check if uploaded answer
-        have_ans = False
-        file_list = os.listdir(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/students')
-        if os.listdir(os.path.join(f'{app.config["UPLOAD_FOLDER"]}/{test_name}', 'ans')):
-            have_ans = True
+    # get all paper of the test
+    conn = sqlite3.connect('test.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM allpaper WHERE test_id = ?;", [test_id])
+    papers_meta = cursor.fetchall()
+    cursor.close()
+    conn.close()
 
-        return render_template('Test/detail.html', file_list=file_list, have_ans=have_ans, test_name=test_name)
-    # prevent user to type a not valid url directly instead of creating a test
-    except:
-        return render_template('error.html')
+    return render_template('Test/detail.html', papers_mata=papers_meta, have_ans=bool(answer), test_id=test_id)
 
 
 # ############################
 # ####### Answer Part ########
 # ############################
 
-@app.route('/tests/<test_name>/process_ans/', methods=['POST'])
-def process_form(test_name):
-    if request.method == 'POST':
-        extension = None
-        clean_files(100)
-        file = request.files.get('photo')
-        mode = request.form.get('model')
+@app.route('/tests/<test_id>/process_ans/', methods=['POST'])
+def process_form(test_id):
+    try:
+        if request.method == 'POST':
+            extension = None
+            clean_files(100)
+            file = request.files.get('photo')
+            mode = request.form.get('model')
 
-        if '.' in file.filename:
-            extension = file.filename.rsplit('.', 1)[1]
+            if '.' in file.filename:
+                extension = file.filename.rsplit('.', 1)[1]
+            else:
+                raise TypeError
 
-        if file and is_extension_allowed(extension):
-            file_name = 'image' + f'.{extension}'
-            file.save(os.path.join(app.config["UPLOAD_FOLDER"], test_name, 'ans', file_name))
-            process_img(os.path.join(app.config["UPLOAD_FOLDER"], test_name, 'ans'), handwriting=bool(mode))
-            return redirect(url_for('check_ans', test_name=test_name))
+            if file and is_extension_allowed(extension):
+                file_name = 'image' + f'.{extension}'
+                file_path = os.path.join(app.config["UPLOAD_FOLDER"], file_name)
+                file.save(file_path)
+                base64_txt = base64.b64encode(open(file_path, "rb").read())
+                result = process_img(app.config["UPLOAD_FOLDER"], handwriting=bool(mode))
+                os.remove(file_path)
 
-    return render_template('error.html')
+                # database
+                conn = sqlite3.connect('test.db')
+                cursor = conn.cursor()
+
+                cursor.execute("UPDATE alltest SET ans_img=?, ans_txt =? WHERE id=?;", [base64_txt, result, test_id])
+
+                conn.commit()
+                cursor.close()
+                conn.close()
+
+                return redirect(url_for('check_ans', test_id=test_id))
+            else:
+                raise TypeError
+
+    except TypeError:
+        return render_template('error.html', error_msg="type error while processing form")
 
 
-@app.route('/tests/<test_name>/check_ans/', methods=['GET', 'POST'])
-def check_ans(test_name):
+@app.route('/tests/<test_id>/check_ans/', methods=['GET', 'POST'])
+def check_ans(test_id):
     if request.method == 'GET':
-        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/ans/outputs/ans.txt', 'r') as f:
-            answer = f.read()
-        return render_template('Answer/check.html', test_name=test_name, answer=answer)
+        # database
+        conn = sqlite3.connect('test.db')
+        cursor = conn.cursor()
 
+        cursor.execute("SELECT ans_txt, ans_img  FROM alltest WHERE id = ?;", [test_id])
+        answer, image = cursor.fetchone()
+        image = str(image)[2:-1]
+
+        cursor.close()
+        conn.close()
+
+        # with open(f'{app.config["UPLOAD_FOLDER"]}/{test_id}/ans/outputs/ans.txt', 'r') as f:
+        #     answer = f.read()
+        return render_template('Answer/check.html', test_id=test_id, answer=answer, image=image)
+
+    # post itself to change ans
     if request.method == 'POST':
         text = request.form.get("stu_ans")
-        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/ans/outputs/ans.txt', 'w') as f:
-            f.write('\n'.join(text.split('\r\n')))
-        return redirect(url_for('detail', test_name=test_name))
+        # database
+        conn = sqlite3.connect('test.db')
+        cursor = conn.cursor()
+
+        cursor.execute("UPDATE alltest SET ans_txt =? WHERE id=?;", [text, test_id])
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return redirect(url_for('detail', test_id=test_id))
 
 
 # View ans
-@app.route('/tests/<test_name>/view_ans/', methods=['GET'])
-def view_ans(test_name):
-    with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/ans/outputs/ans.txt', 'r') as f:
-        answer = f.read()
-    return render_template('Answer/view.html', test_name=test_name, answer=answer)
+@app.route('/tests/<test_id>/view_ans/', methods=['GET'])
+def view_ans(test_id):
+    # database
+    conn = sqlite3.connect('test.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT ans_txt, ans_img  FROM alltest WHERE id = ?;", [test_id])
+    answer, image = cursor.fetchone()
+    image = str(image)[2:-1]
+
+    cursor.close()
+    conn.close()
+
+    return render_template('Answer/view.html', test_id=test_id, answer=answer, image=image)
 
 
 # #############################
 # ####### Student Part ########
-# ################$############
+# #############################
 
 # process student ans
-@app.route('/tests/<test_name>/process_stu/', methods=['POST'])
-def process_stu_form(test_name):
-    if request.method == 'POST':
-        extension = None
-        clean_files(100)
-        file = request.files.get('stu_ans')
-        stu_name = request.form.get('stu_name')
-        mode = request.form.get('model')
+@app.route('/tests/<test_id>/process_stu/', methods=['POST'])
+def process_stu_form(test_id):
+    try:
+        if request.method == 'POST':
+            extension = None
+            clean_files(100)
+            file = request.files.get('stu_ans')
+            student_id = request.form.get('stu_id')
+            mode = request.form.get('model')
 
-        if '.' in file.filename:
-            extension = file.filename.rsplit('.', 1)[1]
+            if '.' in file.filename:
+                extension = file.filename.rsplit('.', 1)[1]
+            else:
+                raise TypeError
 
-        if file and is_extension_allowed(extension):
-            file_name = 'answer' + f'.{extension}'
-            os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], test_name, 'students', stu_name), exist_ok=True)
-            file.save(os.path.join(app.config["UPLOAD_FOLDER"], test_name, 'students', stu_name, file_name))
-            process_img(os.path.join(app.config["UPLOAD_FOLDER"], test_name, 'students', stu_name), bool(mode))
-            return redirect(url_for('check_stu_ans', test_name=test_name, stu_name=stu_name))
+            if file and is_extension_allowed(extension):
+                file_name = 'answer' + f'.{extension}'
+                file_path = os.path.join(app.config["UPLOAD_FOLDER"], file_name)
+                file.save(file_path)
+                base64_txt = base64.b64encode(open(file_path, "rb").read())
+                result = process_img(app.config["UPLOAD_FOLDER"], handwriting=bool(mode))
+                os.remove(file_path)
 
+                # database
+                conn = sqlite3.connect('test.db')
+                cursor = conn.cursor()
+
+                cursor.execute(
+                    "INSERT INTO allpaper (student_id, test_id, ans_img, ans_txt) VALUES (?, ?, ?, ?);",
+                    [student_id, test_id, base64_txt, result])
+
+                conn.commit()
+                cursor.close()
+                conn.close()
+
+                return redirect(url_for('check_stu_ans', test_id=test_id, student_id=student_id))
+            else:
+                raise TypeError
+    except TypeError:
         return render_template('error.html')
 
 
-@app.route('/tests/<test_name>/<stu_name>/check_ans', methods=['GET', 'POST'])
-def check_stu_ans(test_name, stu_name):
+@app.route('/tests/<test_id>/<student_id>/check_ans', methods=['GET', 'POST'])
+def check_stu_ans(test_id, student_id):
     if request.method == 'GET':
-        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/students/{stu_name}/outputs/ans.txt', 'r') as f:
-            answer = f.read()
-        return render_template('Student/check.html', test_name=test_name, stu_name=stu_name, answer=answer)
+        # database
+        conn = sqlite3.connect('test.db')
+        cursor = conn.cursor()
 
+        cursor.execute("SELECT ans_img, ans_txt FROM allpaper WHERE student_id = ? AND test_id = ?;",
+                       [student_id, test_id])
+        image, answer = cursor.fetchone()
+        image = str(image)[2:-1]
+
+        cursor.close()
+        conn.close()
+
+        # with open(f'{app.config["UPLOAD_FOLDER"]}/{test_id}/ans/outputs/ans.txt', 'r') as f:
+        #     answer = f.read()
+        return render_template('Answer/check.html', test_id=test_id, answer=answer, image=image)
+
+    # post itself to change ans
     if request.method == 'POST':
         text = request.form.get("stu_ans")
-        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/students/{stu_name}/outputs/ans.txt', 'w') as f:
-            f.write('\n'.join(text.split('\r\n')))
-        return redirect(url_for('stu_detail', test_name=test_name, stu_name=stu_name))
+        # database
+        conn = sqlite3.connect('test.db')
+        cursor = conn.cursor()
+
+        cursor.execute("UPDATE allpaper SET ans_txt =? WHERE student_id = ? AND test_id = ?;",
+                       [text, student_id, test_id])
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        # TODO: should redirect to view stu detail here
+        return redirect(url_for('detail', test_id=test_id))
 
 
 # view detail
-@app.route('/tests/<test_name>/<stu_name>/', methods=['GET'])
-def stu_detail(test_name, stu_name):
+@app.route('/tests/<test_id>/<stu_name>/', methods=['GET'])
+def stu_detail(test_id, stu_name):
     # Process Answer Image
     if request.method == 'GET':
-        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/ans/outputs/ans.txt', 'r') as f:
+        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_id}/ans/outputs/ans.txt', 'r') as f:
             answer = f.read()
-        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_name}/students/{stu_name}/outputs/ans.txt', 'r') as f:
+        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_id}/students/{stu_name}/outputs/ans.txt', 'r') as f:
             stu_answer = f.read()
-        print(answer, stu_answer)
         details, correct, total = calculate(stu_answer, answer)
-        return render_template('Student/result.html', test_name=test_name, stu_name=stu_name, detail=details, correct=correct, total=total)
+        return render_template('Student/result.html', test_id=test_id, stu_name=stu_name, detail=details,
+                               correct=correct, total=total)
 
     return render_template('error.html')
 

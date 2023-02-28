@@ -3,7 +3,7 @@
 {% block content %}
     <div class="container">
     <h3 class="text-white mt-5 mb-5">Modify and confirm the recognitions result</h3>
-      <form method="post" action="{{ url_for('detail', test_name=test_name) }}" enctype="multipart/form-data" class="tm-edit-product-form row">
+      <form method="post" action="{{ url_for('check_ans', test_id=test_id) }}" enctype="multipart/form-data" class="tm-edit-product-form row">
         <div class="col-xl-6 col-lg-6 col-md-12">
           <div class="form-group mb-3">
             <label for="description">Recognize Result</label>
@@ -16,6 +16,7 @@
         </div>
           <div class="col-xl-6 col-lg-6 col-md-12 mx-auto mb-4">
             <div class="tm-product-img-dummy mx-auto">
+                <img src="data:image;base64,{{ image }}">
             </div>
 
           </div>
