@@ -60,6 +60,7 @@
                         <select
                           class="custom-select tm-select-accounts"
                           id="status"
+                          name="status"
                         >
                           <option selected value="1">OK</option>
                           <option value="2">Late Submission</option>
@@ -109,17 +110,21 @@
                         <th scope="col">STATUS</th>
                         <th scope="col">MARK</th>
                         <th scope="col">ANSWER</th>
+                        <th scope="col">DETAIL</th>
                         <th scope="col">RESULT</th>
+                        <th scope="col">Delete</th>
                       </tr>
                     </thead>
                     <tbody>
                         {% for paper_meta in papers_mata %}
                         <tr>
-                            <td>{{ paper_meta[0] }}</td>
-                            <td>{{ paper_meta[2] }}</td>
+                            <td>{{ paper_meta[1] }}</td>
+                            <td>{{ paper_meta[3] }}</td>
                             <td>20</td>
                             <td><a href="{{ url_for('check_stu_ans', test_id=paper_meta[2], student_id=paper_meta[1]) }}">Check ans</a> </td>
+                            <td><a href="{{ url_for('result', test_id=paper_meta[2], student_id=paper_meta[1]) }}">Result</a> </td>
                             <td>Export</td>
+                            <td>Delete</td>
                         </tr>
                         {% endfor %}
                     </tbody>

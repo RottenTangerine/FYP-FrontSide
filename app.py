@@ -8,8 +8,8 @@ from flask import Flask, render_template, redirect, url_for
 from flask import request
 import base64
 
+# from process import process_img
 from upload import *
-from process import process_img
 from result import *
 
 from PIL import Image
@@ -21,7 +21,7 @@ app = Flask(__name__)
 # save location
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'temporary')
 # file size constraint
-app.config['MAX_CfONTENT_LENGTH'] = 1024 * 1024 * 8  # not used (future work)
+app.config['MAX_CfONTENT_LENGTH'] = 1024 * 1024 * 8  # TODO: not works (future work)
 
 
 # Main Page
@@ -102,7 +102,6 @@ def process_form(test_id):
     try:
         if request.method == 'POST':
             extension = None
-            clean_files(100)
             file = request.files.get('photo')
             mode = request.form.get('model')
 
@@ -116,7 +115,7 @@ def process_form(test_id):
                 file_path = os.path.join(app.config["UPLOAD_FOLDER"], file_name)
                 file.save(file_path)
                 base64_txt = base64.b64encode(open(file_path, "rb").read())
-                result = process_img(app.config["UPLOAD_FOLDER"], handwriting=bool(mode))
+                result = process_img(file_path, handwriting=bool(mode))
                 os.remove(file_path)
 
                 # database
@@ -151,8 +150,6 @@ def check_ans(test_id):
         cursor.close()
         conn.close()
 
-        # with open(f'{app.config["UPLOAD_FOLDER"]}/{test_id}/ans/outputs/ans.txt', 'r') as f:
-        #     answer = f.read()
         return render_template('Answer/check.html', test_id=test_id, answer=answer, image=image)
 
     # post itself to change ans
@@ -197,9 +194,10 @@ def process_stu_form(test_id):
     try:
         if request.method == 'POST':
             extension = None
-            clean_files(100)
             file = request.files.get('stu_ans')
             student_id = request.form.get('stu_id')
+            status = request.form.get('status')
+
             mode = request.form.get('model')
 
             if '.' in file.filename:
@@ -212,7 +210,7 @@ def process_stu_form(test_id):
                 file_path = os.path.join(app.config["UPLOAD_FOLDER"], file_name)
                 file.save(file_path)
                 base64_txt = base64.b64encode(open(file_path, "rb").read())
-                result = process_img(app.config["UPLOAD_FOLDER"], handwriting=bool(mode))
+                result = process_img(file_path, handwriting=bool(mode))
                 os.remove(file_path)
 
                 # database
@@ -220,8 +218,8 @@ def process_stu_form(test_id):
                 cursor = conn.cursor()
 
                 cursor.execute(
-                    "INSERT INTO allpaper (student_id, test_id, ans_img, ans_txt) VALUES (?, ?, ?, ?);",
-                    [student_id, test_id, base64_txt, result])
+                    "INSERT INTO allpaper (student_id, test_id, status, ans_img, ans_txt) VALUES (?, ?, ?, ?, ?);",
+                    [student_id, test_id, status, base64_txt, result])
 
                 conn.commit()
                 cursor.close()
@@ -249,9 +247,7 @@ def check_stu_ans(test_id, student_id):
         cursor.close()
         conn.close()
 
-        # with open(f'{app.config["UPLOAD_FOLDER"]}/{test_id}/ans/outputs/ans.txt', 'r') as f:
-        #     answer = f.read()
-        return render_template('Answer/check.html', test_id=test_id, answer=answer, image=image)
+        return render_template('Student/check.html', test_id=test_id, student_id=student_id, answer=answer, image=image)
 
     # post itself to change ans
     if request.method == 'POST':
@@ -266,48 +262,49 @@ def check_stu_ans(test_id, student_id):
         conn.commit()
         cursor.close()
         conn.close()
-        # TODO: should redirect to view stu detail here
-        return redirect(url_for('detail', test_id=test_id))
+        return redirect(url_for('result', test_id=test_id, student_id=student_id))
 
 
-# view detail
-@app.route('/tests/<test_id>/<stu_name>/', methods=['GET'])
-def stu_detail(test_id, stu_name):
-    # Process Answer Image
-    if request.method == 'GET':
-        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_id}/ans/outputs/ans.txt', 'r') as f:
-            answer = f.read()
-        with open(f'{app.config["UPLOAD_FOLDER"]}/{test_id}/students/{stu_name}/outputs/ans.txt', 'r') as f:
-            stu_answer = f.read()
-        details, correct, total = calculate(stu_answer, answer)
-        return render_template('Student/result.html', test_id=test_id, stu_name=stu_name, detail=details,
-                               correct=correct, total=total)
+@app.route('/tests/<test_id>/<student_id>/view_ans/', methods=['GET'])
+def view_stu_ans(test_id, student_id):
+    # database
+    conn = sqlite3.connect('test.db')
+    cursor = conn.cursor()
 
-    return render_template('error.html')
+    cursor.execute("SELECT ans_txt, ans_img  FROM allpaper WHERE student_id = ? AND test_id = ?;", [student_id, test_id])
+    answer, image = cursor.fetchone()
+    image = str(image)[2:-1]
+
+    cursor.close()
+    conn.close()
+
+    return render_template('Student/view.html', test_id=test_id, answer=answer, image=image)
 
 
 # #############################
 # ####### Scoring Part ########
 # #############################
 
-#
-# # Show Result
-# @app.route('/result/', methods=['POST'])
-# def result():
-#     detail = []
-#     correct = 0
-#     total = 0
-#     text = ''
-#     answer = """商王东迁成都
-# 晋楚双方城濮大战后晋文公成为中原霸主
-# 赤壁之战
-# 郡县制度
-# 罢黜百家，独尊儒术
-# """
-#     if request.method == 'POST':
-#         text = request.form.get("stu_ans")
-#         detail, correct, total = calculate(text, answer)
-#     return render_template('result.html', detail=detail, correct=correct, total=total)
+# Show Result
+@app.route('/tests/<test_id>/<student_id>/results/')
+def result(test_id, student_id):
+    # database
+    conn = sqlite3.connect('test.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT ans_txt FROM alltest WHERE id = ?;",
+                   [test_id])
+    ans = cursor.fetchone()[0]
+    cursor.execute("SELECT ans_txt FROM allpaper WHERE student_id = ? AND test_id = ?;",
+                   [student_id, test_id])
+    stu_ans = cursor.fetchone()[0]
+
+    cursor.close()
+    conn.close()
+
+    info, correct, total = calculate(stu_ans, ans)
+
+    return render_template('Student/result.html', test_id=test_id, info=info, correct=correct, total=total)
 
 
 if __name__ == '__main__':

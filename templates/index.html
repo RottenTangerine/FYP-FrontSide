@@ -47,6 +47,7 @@
                     <th scope="col">PAPER NUMBER</th>
                     <th scope="col">DETAIL</th>
                     <th scope="col">EXPORT</th>
+                    <th scope="col">DELETE</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -54,13 +55,14 @@
                     <tr>
                         <td>{{ _test_meta[1] }}</td>
                         {% if _test_meta[3] == 1 %}
-                            <td>Yes</td>
+                            <td><div class="tm-status-circle moving"></div>Yes</td>
                         {% else %}
-                            <td>No</td>
+                            <td><div class="tm-status-circle cancelled"></div>No</td>
                         {% endif %}
                         <td>{{ _test_meta[2] }}</td>
                         <td><a href="{{ url_for('detail', test_id=_test_meta[0]) }}">detail</a> </td>
                         <td>Export</td>
+                        <td>Delete</td>
                     </tr>
                     {% endfor %}
                 </tbody>
