@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
+
+
     <div class="container">
+    <div>
     <h3 class="text-white mt-5 mb-5">Modify and confirm the recognitions result</h3>
-        <div class="row">
-      <form method="post" action="{{ url_for('check_stu_ans', test_id=test_id, student_id=student_id) }}" enctype="multipart/form-data" class="tm-edit-product-form row">
+      <div class="row">
         <div class="col-xl-6 col-lg-6 col-md-12">
           <div class="form-group mb-3">
             <label for="description">Recognize Result</label>
@@ -17,18 +19,20 @@
           </div>
         </div>
           <div class="col-xl-6 col-lg-6 col-md-12 mx-auto mb-4">
-            <div class="tm-product-img-dummy mx-auto">
-                <img src="data:image;base64,{{ image }}">
-            </div>
+            <img src="data:image;base64,{{ image }}" height="100%" width="100%">
           </div>
-          <div class="col-12">
-            <button type="submit" class="btn btn-primary btn-block text-uppercase">Confirm</button>
-          </div>
-      </form>
-        </div>
+      </div>
 
-        <div>
-        <form method="post" action="{{ url_for('process_stu_form', test_id=test_id) }}" enctype="multipart/form-data" class="row">
+      <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
+        <h4><a class="btn btn-primary btn-block text-uppercase tm-mb-big" href="{{ url_for('check_stu_ans', student_id=student_id, test_id=test_id) }}">Modify Answer </a> </h4>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="text-white mt-5 mb-5">Re-upload ans</h3>
+      <div class="row">
+          <div class="col-xl-9 col-lg-10 col-md-12 col-sm-12 mx-auto">
+              <form method="post" action="{{ url_for('process_stu_form', test_id=test_id) }}" enctype="multipart/form-data" class="row">
         <div class="col-xl-6 col-lg-6 col-md-12">
           <div class="form-group mb-3">
             <label
@@ -91,9 +95,10 @@
           <button type="submit" class="btn btn-primary btn-block text-uppercase" style="margin-top: 25px">upload form</button>
         </div>
         </form>
-        </div>
-
-
+          </div>
+      </div>
     </div>
+    </div>
+
 
 {% endblock %}

@@ -8,7 +8,7 @@ from flask import Flask, render_template, redirect, url_for
 from flask import request
 import base64
 
-# from process import process_img
+from process import process_img
 from upload import *
 from result import *
 
@@ -278,7 +278,7 @@ def view_stu_ans(test_id, student_id):
     cursor.close()
     conn.close()
 
-    return render_template('Student/view.html', test_id=test_id, answer=answer, image=image)
+    return render_template('Student/view.html', test_id=test_id, student_id=student_id, answer=answer, image=image)
 
 
 # #############################
