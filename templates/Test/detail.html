@@ -96,8 +96,57 @@
           </div>
         </div>
 
-        {% if papers_mata %}
+        {% if papers_mata is not none %}
         <h1 class="text-white mt-5 mb-5">Statistics</h1>
+        <div id="main" style="width: 600px;height:400px; background-color: #0b2e13g"></div>
+        <script>
+            var dict = {{ counter }}
+            var chartDom = document.getElementById('main');
+            var myChart = echarts.init(chartDom);
+            var option;
+
+            option = {
+              tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                  type: 'shadow'
+                }
+              },
+              grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+              },
+              xAxis: [
+                {
+                  type: 'category',
+                  data: Object.keys(dict),
+                  axisTick: {
+                    alignWithLabel: true
+                  }
+                }
+              ],
+              yAxis: [
+                {
+                  splitLine: false,
+                  min: 1,
+                  type: 'value'
+                }
+              ],
+              series: [
+                {
+                  name: 'Direct',
+                  type: 'bar',
+                  barWidth: '60%',
+                  data: Object.values(dict)
+                }
+              ]
+            };
+
+            option && myChart.setOption(option);
+        </script>
+</body>
 
         <h1 class="text-white mt-5 mb-5">Scored details</h1>
             <div class="col-12 tm-block-col">
@@ -116,13 +165,23 @@
                       </tr>
                     </thead>
                     <tbody>
-                        {% for paper_meta in papers_mata %}
+                        {% for paper_meta in papers_meta %}
                         <tr>
-                            <td>{{ paper_meta[1] }}</td>
-                            <td>{{ paper_meta[3] }}</td>
-                            <td>20</td>
-                            <td><a href="{{ url_for('view_stu_ans', test_id=paper_meta[2], student_id=paper_meta[1]) }}">View ans</a> </td>
-                            <td><a href="{{ url_for('result', test_id=paper_meta[2], student_id=paper_meta[1]) }}">Result</a> </td>
+                            <td>{{ paper_meta[0] }}</td>
+
+                            {% if paper_meta[1] == 'OK' %}
+                                <td><div class="tm-status-circle moving"></div>{{ paper_meta[1] }}</td>
+                            {% elif paper_meta[1] == 'Late Submission' %}
+                                <td><div class="tm-status-circle pending"></div>{{ paper_meta[1] }}</td>
+                            {% elif paper_meta[1] == 'Cheat' %}
+                                <td><div class="tm-status-circle cancelled"></div>{{ paper_meta[1] }}</td>
+                            {% else %}
+                                <td>{{ paper_meta[1] }}</td>
+                            {% endif %}
+
+                            <td>{{ paper_meta[4] }} / {{ paper_meta[5] }}</td>
+                            <td><a href="{{ url_for('view_stu_ans', test_id=test_id, student_id=paper_meta[0]) }}">View ans</a> </td>
+                            <td><a href="{{ url_for('result', test_id=test_id, student_id=paper_meta[0]) }}">Result</a> </td>
                             <td>Export</td>
                             <td>Delete</td>
                         </tr>

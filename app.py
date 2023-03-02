@@ -1,19 +1,21 @@
-import json
-import os
-
-import pandas as pd
-from icecream import ic
-
 from flask import Flask, render_template, redirect, url_for
 from flask import request
-import base64
 
-from process import process_img
+import os
+import base64
+import collections
+
+import pandas as pd
+import json
+from PIL import Image
+import sqlite3
+
+from icecream import ic
+
+# from process import process_img
 from upload import *
 from result import *
 
-from PIL import Image
-import sqlite3
 
 app = Flask(__name__)
 
@@ -21,7 +23,7 @@ app = Flask(__name__)
 # save location
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'temporary')
 # file size constraint
-app.config['MAX_CfONTENT_LENGTH'] = 1024 * 1024 * 8  # TODO: not works (future work)
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 8  # TODO: not works (future work)
 
 
 # Main Page
@@ -75,6 +77,7 @@ def create():
 @app.route('/tests/<test_id>/', methods=['GET', 'POST'])
 def detail(test_id):
     # try:
+    # get the test ans
     conn = sqlite3.connect('test.db')
     cursor = conn.cursor()
     cursor.execute("SELECT ans_txt FROM alltest WHERE id = ?;", [test_id])
@@ -82,15 +85,35 @@ def detail(test_id):
     cursor.close()
     conn.close()
 
-    # get all paper of the test
+    paper_meta = None
+    score_dist_data = None
+
+    # get all papers' metadata of the test
     conn = sqlite3.connect('test.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM allpaper WHERE test_id = ?;", [test_id])
-    papers_meta = cursor.fetchall()
-    cursor.close()
+    tests_df = pd.read_sql('SELECT * FROM allpaper', conn)
     conn.close()
 
-    return render_template('Test/detail.html', papers_mata=papers_meta, have_ans=bool(answer), test_id=test_id)
+    print(tests_df)
+    if not tests_df.empty:
+        # find all answers for this test
+        paper_meta = tests_df[['student_id', 'status', 'ans_txt', 'test_id']]
+        paper_meta = paper_meta[paper_meta['test_id'] == int(test_id)]
+
+        if not paper_meta.empty:
+            paper_meta["result"] = paper_meta["ans_txt"].apply(lambda x: calculate(x, answer)[1:])
+            # split the result column into two columns score and total
+            paper_meta[["score", "total"]] = pd.DataFrame(paper_meta["result"].tolist(), index=paper_meta.index)
+            # drop the result column
+            paper_meta.drop("result", axis=1, inplace=True)
+            score_dist_data = paper_meta['score'].values.tolist()
+            counter = collections.Counter(score_dist_data)
+            counter = {int(k): v for k, v in counter.items()}
+            print(score_dist_data, counter)
+            # paper meta columns: ['student_id', 'status', 'ans_txt', 'test_id', 'score', 'total']
+            paper_meta = paper_meta.values
+
+    return render_template('Test/detail.html', papers_meta=paper_meta, have_ans=answer is not None,
+                           test_id=test_id, counter=counter)
 
 
 # ############################
@@ -191,12 +214,20 @@ def view_ans(test_id):
 # process student ans
 @app.route('/tests/<test_id>/process_stu/', methods=['POST'])
 def process_stu_form(test_id):
+
+    status_dict = {
+        '1': 'OK',
+        '2': 'Late Submission',
+        '3': 'Cheat',
+    }
+
     try:
         if request.method == 'POST':
             extension = None
             file = request.files.get('stu_ans')
             student_id = request.form.get('stu_id')
             status = request.form.get('status')
+            ic(status)
 
             mode = request.form.get('model')
 
@@ -219,7 +250,7 @@ def process_stu_form(test_id):
 
                 cursor.execute(
                     "INSERT INTO allpaper (student_id, test_id, status, ans_img, ans_txt) VALUES (?, ?, ?, ?, ?);",
-                    [student_id, test_id, status, base64_txt, result])
+                    [student_id, test_id, status_dict[status], base64_txt, result])
 
                 conn.commit()
                 cursor.close()
