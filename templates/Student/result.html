@@ -25,17 +25,17 @@
                   </tr>
                 </thead>
                 <tbody>
-                    {% for text, ans, c in info %}
+                    {% for text, ans in info %}
                     <tr>
                         <td>Q{{ loop.index }}</td>
-                        {% if c %}
+                        {% if result[loop.index0] %}
                             <td><div class="tm-status-circle moving"></div>correct</td>
                         {% else %}
                             <td><div class="tm-status-circle cancelled"></div>wrong</td>
                         {% endif %}
                         <td>{{ text }}</td>
                         <td>{{ ans }}</td>
-                        <td>{{ 1 if c else 0 }}</td>
+                        <td>{{ 1 if result[loop.index0] else 0 }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

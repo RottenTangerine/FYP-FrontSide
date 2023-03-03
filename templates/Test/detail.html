@@ -96,11 +96,12 @@
           </div>
         </div>
 
-        {% if papers_mata is not none %}
+        {% if student_details is not none %}
         <h1 class="text-white mt-5 mb-5">Statistics</h1>
-        <div id="main" style="width: 600px;height:400px; background-color: #0b2e13g"></div>
+        <div class="row">
+        <div id="main" style="width: 60%; height:300px; background-color: #6d8da6"></div>
         <script>
-            var dict = {{ counter }}
+            var dict = {{ score_counter }}
             var chartDom = document.getElementById('main');
             var myChart = echarts.init(chartDom);
             var option;
@@ -130,7 +131,6 @@
               yAxis: [
                 {
                   splitLine: false,
-                  min: 1,
                   type: 'value'
                 }
               ],
@@ -146,7 +146,174 @@
 
             option && myChart.setOption(option);
         </script>
-</body>
+
+        <div id="status_donut" style="width: 40%; height:300px; background-color:#6d8da6"></div>
+        <script type="text/javascript">
+            var chart = echarts.init(document.getElementById('status_donut'));
+            var option = {
+                tooltip: {
+                    trigger: 'item'
+                },
+                legend: {
+                    top: '5%',
+                    left: 'center'
+                  },
+
+                series: [
+                    {
+                        name: 'Student Status',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 10,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: false,
+                            position: 'center'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 40,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: false
+                        },
+
+                        data: [
+                            {% for k, v in status_counter.items() %}
+                                {value: {{ v }}, name: "{{ k }}"},
+                            {% endfor %}
+                        ]
+                    }
+                ]
+            };
+            chart.setOption(option);
+        </script>
+        </div>
+        <div class="row">
+        <div id="question_detail" style="width: 100%; height:500px; background-color:#6d8da6"></div>
+        <script>
+            var chartDom = document.getElementById('question_detail');
+            var myChart = echarts.init(chartDom);
+            var option;
+
+            let xAxisData = [];
+
+            let correct_ok = {{ correct_detail_by_group[2] }};
+            let correct_late_submission = {{ correct_detail_by_group[1] }};
+            let correct_cheat = {{ correct_detail_by_group[0] }};
+            let wrong_ok = {{ wrong_detail_by_group[2] }};
+            let wrong_late_submission = {{ wrong_detail_by_group[1] }};
+            let wrong_cheat = {{ wrong_detail_by_group[0] }};
+
+            for (let i = 1; i <= correct_ok.length; i++) {
+              xAxisData.push('Q' + i);
+            }
+            var emphasisStyle = {
+              itemStyle: {
+                shadowBlur: 10,
+                shadowColor: 'rgba(0,0,0,0.3)'
+              }
+            };
+            option = {
+              legend: {
+                data: ['Correct OK', 'Correct Late Submission', 'Correct Cheat', 'Wrong OK', 'Wrong Late Submission', 'Wrong Cheat'],
+                left: '10%'
+              },
+              tooltip: {},
+              xAxis: {
+                data: xAxisData,
+                name: 'X Axis',
+                axisLine: { onZero: true },
+                splitLine: { show: false },
+                splitArea: { show: false }
+              },
+              yAxis: {},
+              grid: {
+                bottom: 100
+              },
+              series: [
+                {
+                  name: 'Correct OK',
+                  type: 'bar',
+                  stack: 'one',
+                  emphasis: emphasisStyle,
+                  data: correct_ok,
+                  color: '#79c057',
+                },
+                {
+                  name: 'Correct Late Submission',
+                  type: 'bar',
+                  stack: 'one',
+                  emphasis: emphasisStyle,
+                  data: correct_late_submission,
+                    color: '#FFDC60'
+                },
+                {
+                  name: 'Correct Cheat',
+                  type: 'bar',
+                  stack: 'one',
+                  emphasis: emphasisStyle,
+                  data: correct_cheat,
+                    color: '#FFF0F0'
+                },
+                {
+                  name: 'Wrong OK',
+                  type: 'bar',
+                  stack: 'two',
+                  emphasis: emphasisStyle,
+                  data: wrong_ok,
+                    color: '#79c057'
+                },
+                {
+                  name: 'Wrong Late Submission',
+                  type: 'bar',
+                  stack: 'two',
+                  emphasis: emphasisStyle,
+                  data: wrong_late_submission,
+                    color: '#FFDC60'
+                },
+                {
+                  name: 'Wrong Cheat',
+                  type: 'bar',
+                  stack: 'two',
+                  emphasis: emphasisStyle,
+                  data: wrong_cheat,
+                    color: '#d54175'
+                }
+              ]
+            };
+            myChart.on('brushSelected', function (params) {
+              var brushed = [];
+              var brushComponent = params.batch[0];
+              for (var sIdx = 0; sIdx < brushComponent.selected.length; sIdx++) {
+                var rawIndices = brushComponent.selected[sIdx].dataIndex;
+                brushed.push('[Series ' + sIdx + '] ' + rawIndices.join(', '));
+              }
+              myChart.setOption({
+                title: {
+                  backgroundColor: '#333',
+                  text: 'SELECTED DATA INDICES: \n' + brushed.join('\n'),
+                  bottom: 0,
+                  right: '10%',
+                  width: 100,
+                  textStyle: {
+                    fontSize: 12,
+                    color: '#d54175'
+                  }
+                }
+              });
+            });
+
+            option && myChart.setOption(option);
+        </script>
+        </div>
 
         <h1 class="text-white mt-5 mb-5">Scored details</h1>
             <div class="col-12 tm-block-col">
@@ -165,23 +332,23 @@
                       </tr>
                     </thead>
                     <tbody>
-                        {% for paper_meta in papers_meta %}
+                        {% for student_detail in student_details %}
                         <tr>
-                            <td>{{ paper_meta[0] }}</td>
+                            <td>{{ student_detail[0] }}</td>
 
-                            {% if paper_meta[1] == 'OK' %}
-                                <td><div class="tm-status-circle moving"></div>{{ paper_meta[1] }}</td>
-                            {% elif paper_meta[1] == 'Late Submission' %}
-                                <td><div class="tm-status-circle pending"></div>{{ paper_meta[1] }}</td>
-                            {% elif paper_meta[1] == 'Cheat' %}
-                                <td><div class="tm-status-circle cancelled"></div>{{ paper_meta[1] }}</td>
+                            {% if student_detail[1] == 'OK' %}
+                                <td><div class="tm-status-circle moving"></div>{{ student_detail[1] }}</td>
+                            {% elif student_detail[1] == 'Late Submission' %}
+                                <td><div class="tm-status-circle pending"></div>{{ student_detail[1] }}</td>
+                            {% elif student_detail[1] == 'Cheat' %}
+                                <td><div class="tm-status-circle cancelled"></div>{{ student_detail[1] }}</td>
                             {% else %}
-                                <td>{{ paper_meta[1] }}</td>
+                                <td>{{ student_detail[1] }}</td>
                             {% endif %}
 
-                            <td>{{ paper_meta[4] }} / {{ paper_meta[5] }}</td>
-                            <td><a href="{{ url_for('view_stu_ans', test_id=test_id, student_id=paper_meta[0]) }}">View ans</a> </td>
-                            <td><a href="{{ url_for('result', test_id=test_id, student_id=paper_meta[0]) }}">Result</a> </td>
+                            <td>{{ student_detail[4] }} / {{ student_detail[5] }}</td>
+                            <td><a href="{{ url_for('view_stu_ans', test_id=test_id, student_id=student_detail[0]) }}">View ans</a> </td>
+                            <td><a href="{{ url_for('result', test_id=test_id, student_id=student_detail[0]) }}">Result</a> </td>
                             <td>Export</td>
                             <td>Delete</td>
                         </tr>

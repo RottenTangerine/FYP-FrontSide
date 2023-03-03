@@ -16,7 +16,6 @@ from icecream import ic
 from upload import *
 from result import *
 
-
 app = Flask(__name__)
 
 # config
@@ -86,14 +85,16 @@ def detail(test_id):
     conn.close()
 
     paper_meta = None
-    score_dist_data = None
+    score_counter = None
+    status_counter = None
+    correct_detail_by_group = None
+    wrong_detail_by_group = None
 
     # get all papers' metadata of the test
     conn = sqlite3.connect('test.db')
     tests_df = pd.read_sql('SELECT * FROM allpaper', conn)
     conn.close()
 
-    print(tests_df)
     if not tests_df.empty:
         # find all answers for this test
         paper_meta = tests_df[['student_id', 'status', 'ans_txt', 'test_id']]
@@ -102,18 +103,46 @@ def detail(test_id):
         if not paper_meta.empty:
             paper_meta["result"] = paper_meta["ans_txt"].apply(lambda x: calculate(x, answer)[1:])
             # split the result column into two columns score and total
-            paper_meta[["score", "total"]] = pd.DataFrame(paper_meta["result"].tolist(), index=paper_meta.index)
+            paper_meta[["detail", "score", "total"]] = pd.DataFrame(paper_meta["result"].tolist(),
+                                                                    index=paper_meta.index)
+            # ic(paper_meta)
             # drop the result column
             paper_meta.drop("result", axis=1, inplace=True)
+
+            # Data for student status pie chart
+            status_dist_data = paper_meta['status'].values.tolist()
+            status_counter = dict(collections.Counter(status_dist_data))
+            # ic(status_dist_data, status_counter)
+
+            # Data for Each question
+            question_detail = pd.DataFrame(paper_meta['detail'].tolist())
+            question_detail['status'] = paper_meta['status'].reset_index(drop=True)
+            paper_meta.drop("detail", axis=1, inplace=True)
+            # ic(question_detail)
+
+            correct_detail_by_group = question_detail.groupby('status').sum()
+            total_detail_by_group = question_detail.groupby('status').count()
+            wrong_detail_by_group = total_detail_by_group - correct_detail_by_group
+
+            correct_detail_by_group = correct_detail_by_group.values.tolist()
+            wrong_detail_by_group = wrong_detail_by_group.values.tolist()
+
+            # Data for student score distribution bar chart
             score_dist_data = paper_meta['score'].values.tolist()
-            counter = collections.Counter(score_dist_data)
-            counter = {int(k): v for k, v in counter.items()}
-            print(score_dist_data, counter)
-            # paper meta columns: ['student_id', 'status', 'ans_txt', 'test_id', 'score', 'total']
+            score_counter = collections.Counter(score_dist_data)
+            score_counter = {int(k): v for k, v in score_counter.items()}
+            for i in range(len(correct_detail_by_group) + 1):
+                if i in score_counter.keys():
+                    continue
+                score_counter[i] = 0
+            ic(score_dist_data, score_counter)
+
+            # student_details paper meta columns: ['student_id', 'status', 'ans_txt', 'test_id', 'score', 'total']
             paper_meta = paper_meta.values
 
-    return render_template('Test/detail.html', papers_meta=paper_meta, have_ans=answer is not None,
-                           test_id=test_id, counter=counter)
+    return render_template('Test/detail.html', student_details=paper_meta, have_ans=answer is not None,
+                           test_id=test_id, score_counter=score_counter, status_counter=status_counter,
+                           correct_detail_by_group=correct_detail_by_group, wrong_detail_by_group=wrong_detail_by_group)
 
 
 # ############################
@@ -214,7 +243,6 @@ def view_ans(test_id):
 # process student ans
 @app.route('/tests/<test_id>/process_stu/', methods=['POST'])
 def process_stu_form(test_id):
-
     status_dict = {
         '1': 'OK',
         '2': 'Late Submission',
@@ -302,7 +330,8 @@ def view_stu_ans(test_id, student_id):
     conn = sqlite3.connect('test.db')
     cursor = conn.cursor()
 
-    cursor.execute("SELECT ans_txt, ans_img  FROM allpaper WHERE student_id = ? AND test_id = ?;", [student_id, test_id])
+    cursor.execute("SELECT ans_txt, ans_img  FROM allpaper WHERE student_id = ? AND test_id = ?;",
+                   [student_id, test_id])
     answer, image = cursor.fetchone()
     image = str(image)[2:-1]
 
@@ -333,9 +362,10 @@ def result(test_id, student_id):
     cursor.close()
     conn.close()
 
-    info, correct, total = calculate(stu_ans, ans)
+    info, result, correct, total = calculate(stu_ans, ans)
 
-    return render_template('Student/result.html', test_id=test_id, info=info, correct=correct, total=total)
+    return render_template('Student/result.html', test_id=test_id, result=result, info=info, correct=correct,
+                           total=total)
 
 
 if __name__ == '__main__':
