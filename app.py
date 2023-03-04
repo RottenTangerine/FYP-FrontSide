@@ -145,6 +145,21 @@ def detail(test_id):
                            correct_detail_by_group=correct_detail_by_group, wrong_detail_by_group=wrong_detail_by_group)
 
 
+@app.route('/test/<test_id>/delete/', methods=['GET'])
+def delete_test(test_id):
+    # connect database
+    conn = sqlite3.connect('test.db')
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM alltest WHERE id = ?;", [test_id])
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect(url_for('index'))
+
+
 # ############################
 # ####### Answer Part ########
 # ############################

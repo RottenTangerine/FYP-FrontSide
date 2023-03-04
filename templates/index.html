@@ -60,9 +60,9 @@
                             <td><div class="tm-status-circle cancelled"></div>No</td>
                         {% endif %}
                         <td>{{ _test_meta[2] }}</td>
-                        <td><a href="{{ url_for('detail', test_id=_test_meta[0]) }}">detail</a> </td>
+                        <td><a href="{{ url_for('detail', test_id=_test_meta[0]) }}">Detail</a> </td>
                         <td>Export</td>
-                        <td>Delete</td>
+                        <td><a href="{{ url_for('delete_test', test_id=_test_meta[0]) }}">Delete</a> </td>
                     </tr>
                     {% endfor %}
                 </tbody>
