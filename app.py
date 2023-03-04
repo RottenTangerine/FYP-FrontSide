@@ -95,6 +95,8 @@ def detail(test_id):
     tests_df = pd.read_sql('SELECT * FROM allpaper', conn)
     conn.close()
 
+    ic(tests_df)
+
     if not tests_df.empty:
         # find all answers for this test
         paper_meta = tests_df[['student_id', 'status', 'ans_txt', 'test_id']]
@@ -139,7 +141,8 @@ def detail(test_id):
 
             # student_details paper meta columns: ['student_id', 'status', 'ans_txt', 'test_id', 'score', 'total']
             paper_meta = paper_meta.values
-
+        else:
+            paper_meta = None
     return render_template('Test/detail.html', student_details=paper_meta, have_ans=answer is not None,
                            test_id=test_id, score_counter=score_counter, status_counter=status_counter,
                            correct_detail_by_group=correct_detail_by_group, wrong_detail_by_group=wrong_detail_by_group)
@@ -355,6 +358,20 @@ def view_stu_ans(test_id, student_id):
 
     return render_template('Student/view.html', test_id=test_id, student_id=student_id, answer=answer, image=image)
 
+
+@app.route('/test/<test_id>/<student_id>/delete/', methods=['GET'])
+def delete_stu_ans(test_id, student_id):
+    # connect database
+    conn = sqlite3.connect('test.db')
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM allpaper WHERE test_id = ? and student_id = ?;", [test_id, student_id])
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect(url_for('detail', test_id=test_id))
 
 # #############################
 # ####### Scoring Part ########

@@ -350,7 +350,7 @@
                             <td><a href="{{ url_for('view_stu_ans', test_id=test_id, student_id=student_detail[0]) }}">View ans</a> </td>
                             <td><a href="{{ url_for('result', test_id=test_id, student_id=student_detail[0]) }}">Result</a> </td>
                             <td>Export</td>
-                            <td>Delete</td>
+                            <td><a href="{{ url_for('delete_stu_ans', test_id=test_id, student_id=student_detail[0]) }}">Delete</a> </td>
                         </tr>
                         {% endfor %}
                     </tbody>
