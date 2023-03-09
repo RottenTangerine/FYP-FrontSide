@@ -162,28 +162,27 @@ def conv3x3(nIn, nOut, stride=1):
     return nn.Conv2d(nIn, nOut, kernel_size=3, stride=stride, padding=1, bias=False)
 
 
-class basic_res_block(nn.Module):
+class BasicResidualBlock(nn.Module):
 
-    def __init__(self, nIn, nOut, stride=1, downsample=None):
-        super(basic_res_block, self).__init__()
-        m = OrderedDict()
-        m['conv1'] = conv3x3(nIn, nOut, stride)
-        m['bn1'] = nn.BatchNorm2d(nOut)
-        m['relu1'] = nn.ReLU(inplace=True)
-        m['conv2'] = conv3x3(nOut, nOut)
-        m['bn2'] = nn.BatchNorm2d(nOut)
-        self.group1 = nn.Sequential(m)
+    def __init__(self, in_channels, out_channels, stride=1, shortcut=None):
+        super(BasicResidualBlock, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False),
+            nn.InstanceNorm2d(out_channels),
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.InstanceNorm2d(out_channels),
+        )
 
-        self.relu = nn.Sequential(nn.ReLU(inplace=True))
-        self.downsample = downsample
+        self.leaky_relu = nn.Sequential(nn.LeakyReLU(0.1, inplace=True))
+
+        self.shortcut = nn.Sequential()
+        if shortcut:
+            self.shortcut = shortcut
 
     def forward(self, x):
-        if self.downsample is not None:
-            residual = self.downsample(x)
-        else:
-            residual = x
-        out = self.group1(x) + residual
-        out = self.relu(out)
+        out = self.conv(x) + self.shortcut(x)
+        out = self.leaky_relu(out)
         return out
 
 
@@ -194,34 +193,34 @@ class CRNN_res(nn.Module):
         assert imgH % 16 == 0, 'imgH has to be a multiple of 16'
 
         self.conv1 = nn.Conv2d(nc, 64, 3, 1, 1)
-        self.relu1 = nn.ReLU(True)
-        self.res1 = basic_res_block(64, 64)
-        # 1x32x128
+        self.leaky_relu1 = nn.LeakyReLU(0.1, True)
+        self.res1 = BasicResidualBlock(64, 64)
+        # [C, H] = 64 x 32
 
-        down1 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=1, stride=2, bias=False), nn.BatchNorm2d(128))
-        self.res2_1 = basic_res_block(64, 128, 2, down1)
-        self.res2_2 = basic_res_block(128, 128)
-        # 64x16x64
+        short_cut1 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=1, stride=2, bias=False), nn.InstanceNorm2d(128))
+        self.res2_1 = BasicResidualBlock(64, 128, stride=2, shortcut=short_cut1)
+        self.res2_2 = BasicResidualBlock(128, 128)
+        # [C, H] = 128 x 16; w = w / 2
 
-        down2 = nn.Sequential(nn.Conv2d(128, 256, kernel_size=1, stride=2, bias=False), nn.BatchNorm2d(256))
-        self.res3_1 = basic_res_block(128, 256, 2, down2)
-        self.res3_2 = basic_res_block(256, 256)
-        self.res3_3 = basic_res_block(256, 256)
-        # 128x8x32
+        short_cut2 = nn.Sequential(nn.Conv2d(128, 256, kernel_size=1, stride=2, bias=False), nn.InstanceNorm2d(256))
+        self.res3_1 = BasicResidualBlock(128, 256, stride=2, shortcut=short_cut2)
+        self.res3_2 = BasicResidualBlock(256, 256)
+        self.res3_3 = BasicResidualBlock(256, 256)
+        # [C, H] = 256 x 8; w = w / 2
 
-        down3 = nn.Sequential(nn.Conv2d(256, 512, kernel_size=1, stride=(2, 1), bias=False), nn.BatchNorm2d(512))
-        self.res4_1 = basic_res_block(256, 512, (2, 1), down3)
-        self.res4_2 = basic_res_block(512, 512)
-        self.res4_3 = basic_res_block(512, 512)
-        # 256x4x16
+        short_cut3 = nn.Sequential(nn.Conv2d(256, 512, kernel_size=1, stride=(2, 1), bias=False), nn.InstanceNorm2d(512))
+        self.res4_1 = BasicResidualBlock(256, 512,  stride=(2, 1), shortcut=short_cut3)
+        self.res4_2 = BasicResidualBlock(512, 512)
+        self.res4_3 = BasicResidualBlock(512, 512)
+        # [C, H] = 512 x 4; w = w
 
         self.pool = nn.AvgPool2d((2, 2), (2, 1), (0, 1))
-        # 512x2x16
+        # [C, H] = 512 x 2; w = w
 
         self.conv5 = nn.Conv2d(512, 512, 2, 1, 0)
-        self.bn5 = nn.BatchNorm2d(512)
-        self.relu5 = nn.ReLU(True)
-        # 512x1x16
+        self.bn5 = nn.InstanceNorm2d(512)
+        self.leaky_relu5 = nn.LeakyReLU(True)
+        # [C, H] = 512 x 1; w = w
 
         self.rnn = nn.Sequential(
             BidirectionalLSTM(512, nh, nh),
@@ -229,13 +228,12 @@ class CRNN_res(nn.Module):
 
     def forward(self, input):
         # conv features
-        x = self.res1(self.relu1(self.conv1(input)))
-        x = self.res2_2(self.res2_1(x))
-        x = self.res3_3(self.res3_2(self.res3_1(x)))
-        x = self.res4_3(self.res4_2(self.res4_1(x)))
-        x = self.pool(x)
-        conv = self.relu5(self.bn5(self.conv5(x)))
-        # print(conv.size())
+        x = self.res1(self.leaky_relu1(self.conv1(input)))  # 64 x 32 x w
+        x = self.res2_2(self.res2_1(x))  # 128 x 16 x w
+        x = self.res3_3(self.res3_2(self.res3_1(x)))  # 256 x 8 x w
+        x = self.res4_3(self.res4_2(self.res4_1(x)))  # 512 x 4 x w
+        x = self.pool(x)  # 512 x 2 x w
+        conv = self.leaky_relu5(self.bn5(self.conv5(x)))  # 512 x 1 x w
         b, c, h, w = conv.size()
         assert h == 1, "the height of conv must be 1"
         conv = conv.squeeze(2)

@@ -12,7 +12,7 @@ import sqlite3
 
 from icecream import ic
 
-# from process import process_img
+from process import process_img
 from upload import *
 from result import *
 
@@ -95,7 +95,7 @@ def detail(test_id):
     tests_df = pd.read_sql('SELECT * FROM allpaper', conn)
     conn.close()
 
-    ic(tests_df)
+    # ic(tests_df)
 
     if not tests_df.empty:
         # find all answers for this test
@@ -120,7 +120,7 @@ def detail(test_id):
             question_detail = pd.DataFrame(paper_meta['detail'].tolist())
             question_detail['status'] = paper_meta['status'].reset_index(drop=True)
             paper_meta.drop("detail", axis=1, inplace=True)
-            # ic(question_detail)
+            ic(question_detail)
 
             correct_detail_by_group = question_detail.groupby('status').sum()
             total_detail_by_group = question_detail.groupby('status').count()
@@ -131,6 +131,8 @@ def detail(test_id):
 
             # Data for student score distribution bar chart
             score_dist_data = paper_meta['score'].values.tolist()
+            ic(correct_detail_by_group, wrong_detail_by_group)
+            ic(paper_meta)
             score_counter = collections.Counter(score_dist_data)
             score_counter = {int(k): v for k, v in score_counter.items()}
             for i in range(len(correct_detail_by_group) + 1):

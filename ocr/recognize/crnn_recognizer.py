@@ -99,8 +99,9 @@ class strLabelConverter(object):
 class PytorchOcr():
     def __init__(self, net, model_path, alphabet):
         alphabet_unicode = alphabet
+        print(alphabet)
         self.alphabet = ''.join([chr(uni) for uni in alphabet_unicode])
-        # print(len(self.alphabet))
+        print(len(self.alphabet))
         self.nclass = len(self.alphabet) + 1
         if net == 'res':
             print('set up res model')
@@ -112,7 +113,10 @@ class PytorchOcr():
         if torch.cuda.is_available():
             self.cuda = True
             self.model.cuda()
-            self.model.load_state_dict(torch.load(model_path))
+            try:
+                self.model.load_state_dict(torch.load(model_path))
+            except RuntimeError:
+                self.model.load_state_dict(torch.load(model_path)['state_dict'])
         else:
             # self.model = nn.DataParallel(self.model)
             self.model.load_state_dict(torch.load(model_path, map_location='cpu'))

@@ -3,14 +3,14 @@ from recognize import keys
 train_infofile = 'data_set/infofile_train_10w.txt'
 train_infofile_fullimg = ''
 val_infofile = 'data_set/infofile_test.txt'
-alphabet = keys.alphabet
-alphabet_v2 = keys.alphabet_v2
+alphabet_machine = keys.alphabet_machine
+alphabet_hand = keys.alphabet_hand
 workers = 4
 batchSize = 50
 imgH = 32
 imgW = 280
 nc = 1
-nclass = len(alphabet)+1
+nclass = len(alphabet_hand)+1
 nh = 256
 niter = 100
 lr = 0.0003
