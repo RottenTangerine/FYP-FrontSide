@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, send_file
 from flask import request
 
 import os
@@ -6,8 +6,6 @@ import base64
 import collections
 
 import pandas as pd
-import json
-from PIL import Image
 import sqlite3
 
 from icecream import ic
@@ -375,6 +373,7 @@ def delete_stu_ans(test_id, student_id):
 
     return redirect(url_for('detail', test_id=test_id))
 
+
 # #############################
 # ####### Scoring Part ########
 # #############################
@@ -400,6 +399,12 @@ def result(test_id, student_id):
 
     return render_template('Student/result.html', test_id=test_id, result=result, info=info, correct=correct,
                            total=total)
+
+
+@app.route('/download')
+def download_file():
+    path = "export.zip"
+    return send_file(path, as_attachment=True)
 
 
 if __name__ == '__main__':

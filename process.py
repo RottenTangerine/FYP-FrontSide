@@ -36,17 +36,12 @@ def zip_test(test_name):
                 f.write(os.path.join(path, filename), os.path.join(fpath, filename))
 
 
-
-
 def return_img_stream(img_path):
     img_stream = ''
     with open(img_path, 'rb') as img:
         img_stream = img.read()
         img_stream = base64.b64encode(img_stream)
     return img_stream
-
-def get_test_ans_img(test_name):
-    ans_path = os.path.join()
 
 
 if __name__ == '__main__':
